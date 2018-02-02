@@ -3,8 +3,7 @@
 #include "stdafx.h"
 #include "ScanInterfaceC.h"
 #include "Callbacks.h"
-#include "scratch.hpp"
-#include "scratchwhite.hpp"
+#include "detect2d.hpp"
 #include <iostream>  
 #include <boost/timer.hpp>
 #include "opencv2/opencv.hpp"
@@ -20,8 +19,7 @@ using namespace std;
 using namespace Pylon;
 using namespace cv;
 static const uint32_t c_countOfImagesToGrab = 1;
-class scratch Scratch;
-class scratchwhite Scratchwhite;
+class detect2d Detect2d;
 class prehandle Prehandle;
 class flatulence Flatulence;
 cv::Mat imgdepthVert;
@@ -101,7 +99,7 @@ int main(int argc, char* argv[])
 #endif
 #ifdef READ
 		cv::Mat img = cv::imread(strPath2D,0);
-		int errorReport = Scratch.scratchCheck(img);
+		int errorReport = Detect2d.scratchCheck(img);
 #endif
 
 
