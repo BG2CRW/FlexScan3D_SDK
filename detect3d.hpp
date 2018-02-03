@@ -1,12 +1,12 @@
 //预处理：滤波+canny
-#ifndef PREHANDLE_HPP
-#define PREHANDLE_HPP
+#ifndef DETECT3D_HPP
+#define DETECT3D_HPP
 #include "opencv2/opencv.hpp"
 
 using namespace cv;
 using namespace std;
 
-class prehandle
+class detect3d
 {
 public:
 	void makeMask(cv::Mat depthImage,cv::Mat erodeBinary,int threshold,int erodeTimes,int* classify,Point* matchLocation,int type);

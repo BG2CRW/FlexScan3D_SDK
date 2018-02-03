@@ -8,7 +8,6 @@
 #include <iostream>  
 #include <boost/timer.hpp>
 #include "opencv2/opencv.hpp"
-#include "prehandle.hpp"
 #include "flatulence.hpp"
 #include <string>
 // Include files to use the PYLON API.
@@ -229,7 +228,7 @@ int main(int argc, char* argv[])
 		cv::Mat imgdepthVert = cv::imread(strPath3DVert, 0);
 		cv::Mat imgdepthHor = cv::imread(strPath3DHor, 0);
 		errorReport = Flatulence.flatulenceCheck(imgdepthVert, 127, 2.3, 240, 35);
-		errorReport = Detecte3d.prejudge(imgdepthVert);
+		errorReport = Detect3d.prejudge(imgdepthVert);
 #endif
 	}
 	return 0;

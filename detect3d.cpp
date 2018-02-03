@@ -1,12 +1,12 @@
 //预处理：滤波+canny
-#include "prehandle.hpp"
+#include "detect3d.hpp"
 #define DEBUG 1
 #define PI 3.1415926  
 
 using namespace std;
 using namespace cv;
 
-void prehandle::findModel(cv::Mat depthImage,string path,Point* matchLocation,float threshold)
+void detect3d::findModel(cv::Mat depthImage,string path,Point* matchLocation,float threshold)
 {
 	Mat g_srcImage,g_templateImage,g_resultImage;
 	g_templateImage = imread(path, 0 );  
@@ -65,7 +65,7 @@ void prehandle::findModel(cv::Mat depthImage,string path,Point* matchLocation,fl
     //imshow( "result", g_srcImage );   
 }
 
-void prehandle::makeMask(cv::Mat depthImage,cv::Mat erodeBinary,int threshold,int erodeTimes,int* classify,Point* matchLocation,int type)
+void detect3d::makeMask(cv::Mat depthImage,cv::Mat erodeBinary,int threshold,int erodeTimes,int* classify,Point* matchLocation,int type)
 {
 	cv::Mat src;
 	depthImage.copyTo(src);
@@ -219,7 +219,7 @@ void prehandle::makeMask(cv::Mat depthImage,cv::Mat erodeBinary,int threshold,in
 //	pos       0:pos,1:neg,2:no
 //	classify  0:recycle,1:error,2:apple,3:no
 
-void prehandle::judgeInv(int *classify,int *inv,int *pos,Mat depthImage,Point* matchLocation)
+void detect3d::judgeInv(int *classify,int *inv,int *pos,Mat depthImage,Point* matchLocation)
 {
 	string path_recycle="/home/chaofan/huahen/model/model_recycle.png";
 	string path_error="/home/chaofan/huahen/model/model_error.png";
@@ -313,7 +313,7 @@ void ConnectEdge(Mat src)
 	}
 }
 
-int prehandle::prejudge(cv::Mat depthImage)
+int detect3d::prejudge(cv::Mat depthImage)
 {
 
 	int id = 0;
