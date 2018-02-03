@@ -4,6 +4,7 @@
 #include "ScanInterfaceC.h"
 #include "Callbacks.h"
 #include "detect2d.hpp"
+#include "detect3d.hpp"
 #include <iostream>  
 #include <boost/timer.hpp>
 #include "opencv2/opencv.hpp"
@@ -20,7 +21,7 @@ using namespace Pylon;
 using namespace cv;
 static const uint32_t c_countOfImagesToGrab = 1;
 class detect2d Detect2d;
-class prehandle Prehandle;
+class detect3d Detect3d;
 class flatulence Flatulence;
 cv::Mat imgdepthVert;
 cv::Mat imgdepthHor;
@@ -228,6 +229,7 @@ int main(int argc, char* argv[])
 		cv::Mat imgdepthVert = cv::imread(strPath3DVert, 0);
 		cv::Mat imgdepthHor = cv::imread(strPath3DHor, 0);
 		errorReport = Flatulence.flatulenceCheck(imgdepthVert, 127, 2.3, 240, 35);
+		errorReport = Detecte3d.prejudge(imgdepthVert);
 #endif
 	}
 	return 0;

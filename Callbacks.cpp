@@ -59,17 +59,4 @@ void ScanProcessedCallback(void* userContext, FS3D_Handle handle)
 		return;
 	}
 
-	//errorReport = Prehandle.prejudge(depthSrc);
-	//cout << errorReport << endl;  
-
-	
-	////Sampling output
-	//time_t t = time(0);
-	//char tmp[50] = { NULL };
-	//strftime(tmp, sizeof(tmp), "%Y-%m-%d %H-%M-%S", localtime(&t));
-	//char filename[100];
-	//sprintf(filename, "D:\\VS_Project\\ScanData\\%s.jpg", tmp);
-	//cout << filename << endl;
-	//imwrite(filename, depthSrc);
-	////cv::waitKey();
 }

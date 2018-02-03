@@ -7,6 +7,8 @@
 using namespace std;
 using namespace cv;
 
+
+
 void shadow::cloud2Mat(CvMat* points_mat, pcl::PointCloud<pcl::PointXYZ> cloud)
 {
 	for (int i = 0; i < cloud.width; i++)
