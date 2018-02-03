@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
 		sprintf(strPath2D, "%s%s%s", path2D_prefix, str0, path_suffix);
 		sprintf(strPath3DVert, "%s%s%s", path3D_prefix, str0, path_3DVert_suffix);
 		sprintf(strPath3DHor, "%s%s%s", path3D_prefix, str0, path_3DHor_suffix);
-
+/*
 #ifdef GRAB
 		// The exit code of the sample application.
 		int exitCode = 0;
@@ -101,7 +101,7 @@ int main(int argc, char* argv[])
 		cv::Mat img = cv::imread(strPath2D,0);
 		int errorReport = Detect2d.scratchCheck(img);
 #endif
-
+*/
 
 
 
@@ -227,7 +227,7 @@ int main(int argc, char* argv[])
 #ifdef READ
 		cv::Mat imgdepthVert = cv::imread(strPath3DVert, 0);
 		cv::Mat imgdepthHor = cv::imread(strPath3DHor, 0);
-		errorReport = Flatulence.flatulenceCheck(imgdepthVert, 127, 2.3, 240, 35);
+		int errorReport = Flatulence.flatulenceCheck(imgdepthVert, 127, 2.3, 240, 35);
 		errorReport = Detect3d.prejudge(imgdepthVert);
 #endif
 	}
