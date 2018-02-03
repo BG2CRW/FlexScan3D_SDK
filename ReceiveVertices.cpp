@@ -229,6 +229,7 @@ int main(int argc, char* argv[])
 		cv::Mat imgdepthHor = cv::imread(strPath3DHor, 0);
 		int errorReport = Flatulence.flatulenceCheck(imgdepthVert, 127, 2.3, 240, 35);
 		errorReport = Detect3d.prejudge(imgdepthVert);
+		errorReport = Detect3d.prejudge(imgdepthHor);
 #endif
 	}
 	return 0;

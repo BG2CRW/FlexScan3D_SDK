@@ -221,9 +221,9 @@ void detect3d::makeMask(cv::Mat depthImage,cv::Mat erodeBinary,int threshold,int
 
 void detect3d::judgeInv(int *classify,int *inv,int *pos,Mat depthImage,Point* matchLocation)
 {
-	string path_recycle="/home/chaofan/huahen/model/model_recycle.png";
-	string path_error="/home/chaofan/huahen/model/model_error.png";
-	string path_apple="/home/chaofan/huahen/model/model_apple.png";
+	string path_recycle="D:/model/model_recycle.png";
+	string path_error="D:/model/model_error.png";
+	string path_apple="D:/model/model_apple.png";
 
 	Mat pic,pic_inv;
 	depthImage.copyTo(pic);
@@ -367,9 +367,9 @@ int detect3d::prejudge(cv::Mat depthImage)
 
 	Canny(depthImage, canny1, 10, 110, 3);
 	//imshow("canny1",canny1);
-	//dst.copyTo(canny);
+	dst.copyTo(canny);
 
-	for 	(int i = 0; i<canny.rows; i++)
+	for(int i = 0; i<canny.rows; i++)
 	{
 		for (int j = 0; j<canny.cols; j++)
 		{
@@ -430,6 +430,7 @@ int detect3d::prejudge(cv::Mat depthImage)
 	cv::Mat close;
 	cv::morphologyEx(drawing, close, cv::MORPH_CLOSE, element15);
 	imshow("drawing", drawing);
+	//waitKey();
 	vector<vector<Point> > contours1;
 	vector<Vec4i> hierarchy1;
 	findContours(close, contours1, hierarchy1, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
@@ -459,10 +460,10 @@ int detect3d::prejudge(cv::Mat depthImage)
 	char t[256];
 	cout << j << endl;
 
-	//imshow("漏洞", depthImage);
-
+	imshow("漏洞", depthImage);
+	waitKey();
 	drawing.copyTo(depthImage);
-	//waitKey();
+	
 
 	return j;
 }
