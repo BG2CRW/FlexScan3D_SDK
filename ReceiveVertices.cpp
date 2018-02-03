@@ -105,131 +105,131 @@ int main(int argc, char* argv[])
 
 
 
-#ifdef GRAB
-		
-		for (int i = 0; i < 2; i++)
-		{
-			const char* pathToFlexScan3D = "C:\\Program Files\\LMI Technologies\\FlexScan3D 3.3\\App\\FlexScan3D.exe";
-
-			char* itemName;
-			int* numValues;
-			float** values;
-			if (i == 0)
-			{
-				cout << "Please put the battery under the LMI camera vertically!" << endl;
-			}
-			if (i == 1)
-			{
-				cout << "Please put the battery under the LMI camera horizonlly!" << endl;
-			}
-			getchar();
-			// Start FlexScan3D
-			//printf("Starting FlexScan3D...\n");
-			//if (FS3D_Init(pathToFlexScan3D) != FS3D_RESULT_OK)
-			if (FS3D_Attach() != FS3D_RESULT_OK)
-			{
-				printf("Could not start FlexScan3D.\n");
-				return -1;
-			}
-
-			// Disable writing to disk
-			//printf("Disable disk writing...\n");
-			if (FS3D_Command("scriptline \"Set('Scanning_WriteToDisk', 'False')\"") != FS3D_RESULT_OK)
-			{
-				printf("An error occurred when modifying the Scanning_WriteToDisk setting.\n");
-				//FS3D_Exit();
-				FS3D_Detach();
-				return -1;
-			}
-
-			printf("Connecting to the scanner...\n");
-			if (FS3D_Command("scriptline \"ScannerConnect()\"") != FS3D_RESULT_OK)
-			{
-				printf("An error occurred when attempting to connect to the scanner.\n");
-				//FS3D_Exit();
-				FS3D_Detach();
-				return -1;
-			}
-
-			// Set up the callback
-			//printf("Register callback...\n");
-			// ScanProcessedCallback gets called every time a scan occurs
-			if (FS3D_RegisterCallback("ScanProcessed", NULL, ScanProcessedCallback) != FS3D_RESULT_OK)
-			{
-				printf("An error occurred when registering the callback.\n");
-				//FS3D_Exit();
-				FS3D_Detach();
-				return -1;
-			}
-
-			boost::timer constant;
-
-			//printf("Setting scanner exposure...\n");
-			if (FS3D_Command("scriptline \"SetScannerExposure(GetScannerNameFromIndex(0), 100)\"") != FS3D_RESULT_OK)
-			{
-				printf("An error occurred when set scanner exposure.\n");
-				//FS3D_Exit();
-				FS3D_Detach();
-				return -1;
-			}
-
-			printf("Scanning...\n");
-			if (FS3D_Command("scriptline \"Scan()\"") != FS3D_RESULT_OK)
-			{
-				printf("An error occurred when attempting to scan.\n");
-				//FS3D_Exit();
-				FS3D_Detach();
-				return -1;
-			}
-			cout << "Total time: " << constant.elapsed() << endl;
-
-
-			// Cancel the callback
-			//printf("Unregister callback...\n");
-			//ScanProcessedCallback gets called every time a scan occurs
-			if (FS3D_UnregisterCallback("ScanProcessed") != FS3D_RESULT_OK)
-			{
-				printf("An error occurred when unregistering the callback.\n");
-				//FS3D_Exit();
-				FS3D_Detach();
-				return -1;
-			}
-
-
-			// Keep running until a key is pressed
-			//printf("Press the Enter key to exit...\n");
-			//getchar();
-
-			//printf("Enable disk writing...\n");
-			if (FS3D_Command("scriptline \"Set('Scanning_WriteToDisk', 'True')\"") != FS3D_RESULT_OK)
-			{
-				printf("An error occurred when modifying the Scanning_WriteToDisk setting.\n");
-				//FS3D_Exit();
-				FS3D_Detach();
-				return -1;
-			}
-			// shut down FlexScan3D
-			//printf("Shutting down FlexScan3D...\n");
-			//FS3D_Exit();
-			FS3D_Detach();
-			if (i == 0)
-			{
-				imgdepthVert = cv::imread("cache.jpg");
-			}
-			if (i == 1)
-			{
-				imgdepthHor = cv::imread("cache.jpg");
-			}
-		}
-		cv::imwrite(strPath3DVert, imgdepthVert);
-		cv::imwrite(strPath3DHor, imgdepthHor);
-#endif
-#ifdef READ
-		cv::Mat imgdepthVert = cv::imread(strPath3DVert, 0);
-		cv::Mat imgdepthHor = cv::imread(strPath3DHor, 0);
-		errorReport = Flatulence.flatulenceCheck(imgdepthVert, 127, 2.3, 240, 35);
-		errorReport = Detect3d.prejudge(imgdepthVert);
-#endif
+//#ifdef GRAB
+//		
+//		for (int i = 0; i < 2; i++)
+//		{
+//			const char* pathToFlexScan3D = "C:\\Program Files\\LMI Technologies\\FlexScan3D 3.3\\App\\FlexScan3D.exe";
+//
+//			char* itemName;
+//			int* numValues;
+//			float** values;
+//			if (i == 0)
+//			{
+//				cout << "Please put the battery under the LMI camera vertically!" << endl;
+//			}
+//			if (i == 1)
+//			{
+//				cout << "Please put the battery under the LMI camera horizonlly!" << endl;
+//			}
+//			getchar();
+//			// Start FlexScan3D
+//			//printf("Starting FlexScan3D...\n");
+//			//if (FS3D_Init(pathToFlexScan3D) != FS3D_RESULT_OK)
+//			if (FS3D_Attach() != FS3D_RESULT_OK)
+//			{
+//				printf("Could not start FlexScan3D.\n");
+//				return -1;
+//			}
+//
+//			// Disable writing to disk
+//			//printf("Disable disk writing...\n");
+//			if (FS3D_Command("scriptline \"Set('Scanning_WriteToDisk', 'False')\"") != FS3D_RESULT_OK)
+//			{
+//				printf("An error occurred when modifying the Scanning_WriteToDisk setting.\n");
+//				//FS3D_Exit();
+//				FS3D_Detach();
+//				return -1;
+//			}
+//
+//			printf("Connecting to the scanner...\n");
+//			if (FS3D_Command("scriptline \"ScannerConnect()\"") != FS3D_RESULT_OK)
+//			{
+//				printf("An error occurred when attempting to connect to the scanner.\n");
+//				//FS3D_Exit();
+//				FS3D_Detach();
+//				return -1;
+//			}
+//
+//			// Set up the callback
+//			//printf("Register callback...\n");
+//			// ScanProcessedCallback gets called every time a scan occurs
+//			if (FS3D_RegisterCallback("ScanProcessed", NULL, ScanProcessedCallback) != FS3D_RESULT_OK)
+//			{
+//				printf("An error occurred when registering the callback.\n");
+//				//FS3D_Exit();
+//				FS3D_Detach();
+//				return -1;
+//			}
+//
+//			boost::timer constant;
+//
+//			//printf("Setting scanner exposure...\n");
+//			if (FS3D_Command("scriptline \"SetScannerExposure(GetScannerNameFromIndex(0), 100)\"") != FS3D_RESULT_OK)
+//			{
+//				printf("An error occurred when set scanner exposure.\n");
+//				//FS3D_Exit();
+//				FS3D_Detach();
+//				return -1;
+//			}
+//
+//			printf("Scanning...\n");
+//			if (FS3D_Command("scriptline \"Scan()\"") != FS3D_RESULT_OK)
+//			{
+//				printf("An error occurred when attempting to scan.\n");
+//				//FS3D_Exit();
+//				FS3D_Detach();
+//				return -1;
+//			}
+//			cout << "Total time: " << constant.elapsed() << endl;
+//
+//
+//			// Cancel the callback
+//			//printf("Unregister callback...\n");
+//			//ScanProcessedCallback gets called every time a scan occurs
+//			if (FS3D_UnregisterCallback("ScanProcessed") != FS3D_RESULT_OK)
+//			{
+//				printf("An error occurred when unregistering the callback.\n");
+//				//FS3D_Exit();
+//				FS3D_Detach();
+//				return -1;
+//			}
+//
+//
+//			// Keep running until a key is pressed
+//			//printf("Press the Enter key to exit...\n");
+//			//getchar();
+//
+//			//printf("Enable disk writing...\n");
+//			if (FS3D_Command("scriptline \"Set('Scanning_WriteToDisk', 'True')\"") != FS3D_RESULT_OK)
+//			{
+//				printf("An error occurred when modifying the Scanning_WriteToDisk setting.\n");
+//				//FS3D_Exit();
+//				FS3D_Detach();
+//				return -1;
+//			}
+//			// shut down FlexScan3D
+//			//printf("Shutting down FlexScan3D...\n");
+//			//FS3D_Exit();
+//			FS3D_Detach();
+//			if (i == 0)
+//			{
+//				imgdepthVert = cv::imread("cache.jpg");
+//			}
+//			if (i == 1)
+//			{
+//				imgdepthHor = cv::imread("cache.jpg");
+//			}
+//		}
+//		cv::imwrite(strPath3DVert, imgdepthVert);
+//		cv::imwrite(strPath3DHor, imgdepthHor);
+//#endif
+//#ifdef READ
+//		cv::Mat imgdepthVert = cv::imread(strPath3DVert, 0);
+//		cv::Mat imgdepthHor = cv::imread(strPath3DHor, 0);
+//		errorReport = Flatulence.flatulenceCheck(imgdepthVert, 127, 2.3, 240, 35);
+//		errorReport = Detect3d.prejudge(imgdepthVert);
+//#endif
 	}
 	return 0;
 }
