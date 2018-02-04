@@ -9,7 +9,7 @@ using namespace cv;
 void detect3d::findModel(cv::Mat depthImage,string path,Point* matchLocation,float threshold)
 {
 	Mat g_srcImage,g_templateImage,g_resultImage;
-	g_templateImage = imread(path, 0 );  
+	g_templateImage = imread(path, 0);  
 	depthImage.copyTo(g_srcImage); 
  
     //a) init a matrix to output result
@@ -323,6 +323,8 @@ int detect3d::prejudge(cv::Mat depthImage)
 	Point matchLocation[2];
 	Mat pic, pic_inv;
 	int type=0;//0:big battery,1:small battery
+
+	mathch2Dsilk();
 	
 	depthImage.copyTo(pic);
 	flip(pic, pic_inv, -1);
@@ -466,4 +468,38 @@ int detect3d::prejudge(cv::Mat depthImage)
 	
 
 	return j;
+}
+
+void detect3d::mathch2Dsilk()
+{
+	cv::Mat image2D,grad_x, abs_grad_x;
+	double fx, fy;
+	Point* matchLocation_recycle;
+	Point* matchLocation_apple;
+	Point* matchLocation_error;
+	string path_2D = "D:/666final.jpg";
+	string path_recycle = "D:/model/model_recycle.png";
+	string path_error = "D:/model/model_error.png";
+	string path_apple = "D:/model/model_apple.png";
+
+	cv::Mat depthImage = cv::imread(path_2D,0);
+	depthImage.copyTo(image2D);
+	flip(image2D, image2D, 0);
+	fx = 1.4;
+	fy = 1.4;
+	resize(image2D, image2D, Size(image2D.cols / fx, image2D.rows / fy), 0, 0, INTER_LINEAR);
+	cv::Mat apple = cv::imread(path_apple,0);
+	cv::imshow("apple",apple);
+	/*Sobel(apple, grad_x, CV_16S, 0, 1, 3, 1, 1, BORDER_DEFAULT);
+	convertScaleAbs(grad_x, abs_grad_x);*/
+	/*Canny(apple, abs_grad_x, 3, 110, 3);
+	cv::imshow("Sobel_x", abs_grad_x);*/
+	/*threshold(apple, apple, 90, 255, THRESH_BINARY);
+	cv::imwrite("D:/model/model_applechange.png", apple);
+	cv::imshow("apple2", apple);*/
+	cv::waitKey();
+	findModel(image2D, path_apple, matchLocation_apple, 0.1);
+	//cout << "matchLocation_apple[0]: " <<matchLocation_apple[0].x << endl;
+	findModel(image2D, path_recycle, matchLocation_recycle, 0.2);
+	findModel(image2D, path_error, matchLocation_error, 0.2);
 }
