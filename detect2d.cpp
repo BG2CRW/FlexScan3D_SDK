@@ -15,70 +15,53 @@ int detect2d::scratchCheck(cv::Mat image)
 	batteryKind = 2;
 	if (batteryKind == 1)//Iphone8 Battery
 	{
-		//007
-		//minRow = 380;
-		//maxRow = 870;
-		//minCol = 190;
-		//maxCol = 1400;
-		//016
-		//minRow = 350;
-		//maxRow = 840;
-		//minCol = 200;
-		//maxCol = 1410;
-		//024
-		//minRow = 370;
-		//maxRow = 870;
-		//minCol = 175;
-		//maxCol = 1385;
 		//For test
 		minRow = 150;
 		maxRow = 1050;
 		minCol = 50;
-		maxCol = 1550;
+		maxCol = 1460;
 	}
 	if (batteryKind == 2)//Iphone8+ Battery
 	{
-		//minRow = 210;
-		//maxRow = 1000;
-		//minCol = 270;
-		//maxCol = 1245;
-		//For test
-		minRow = 150;
-		maxRow = 1050;
-		minCol = 50;
-		maxCol = 1550;
+		minRow = 210;
+		maxRow = 1000;
+		minCol = 270;
+		maxCol = 1460;
 	}
 	if (batteryKind == 3)//HW Battery
 	{
 		minRow = 210;
 		maxRow = 1000;
 		minCol = 270;
-		maxCol = 1245;
+		maxCol = 1460;
 	}
-	cv::Mat image2, Mask, imageBlack;
+	cv::Mat image2, imageEdge, edgeMask, Mask, imageBlack;
 	imshow("Image", image);
 	imwrite("D:/660image.jpg", image);
 	image.copyTo(image2);
+	image.copyTo(imageEdge);
 	image.copyTo(imageBlack);
 	image.copyTo(imageTemp);
 
-	//检测黑色发亮
-	int blackID = blackDetect(imageBlack);
-	cout << "Result ID for Black detection: " << blackID << ". (1 for OK,2 for NG)" << endl;
-	//imshow("Black", imageBlack);
-	//imshow("BlackModel", imageTemp);
+	//分离边缘和中心，并得到切边模版 edgeMask为边缘模版，imageEdge为边缘图像
+	edgeMask = edgeMake(imageEdge);
 
-	//Make the adaptive model
+	//检测黑色发亮
+	int blackID = blackDetect(imageBlack, edgeMask);
+	cout << "Result ID for Black detection: " << blackID << ". (1 for OK,2 for NG)" << endl;
+	imshow("Black", imageBlack);
+
+	//制作自适应模版
 	cv::Mat adpModel, adpROI;
-	//自适应方法做丝印ROI
-	bitwise_not(image2, adpROI);
-	adaptiveThreshold(adpROI, adpROI, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY_INV, 1000 * 2 + 1, 8);
-	Mat elementAdp = getStructuringElement(MORPH_RECT, Size(6, 6));
-	dilate(adpROI, adpROI, elementAdp);
-	//imshow("One step adp", adpROI);
-	//imwrite("D:/661modeladp.jpg", adpROI);
+	////自适应方法做丝印ROI
+	//bitwise_not(image2, adpROI);
+	//adaptiveThreshold(adpROI, adpROI, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY_INV, 1000 * 2 + 1, 8);
+	//Mat elementAdp = getStructuringElement(MORPH_RECT, Size(6, 6));
+	//dilate(adpROI, adpROI, elementAdp);
+	////imshow("One step adp", adpROI);
+	////imwrite("D:/661modeladp.jpg", adpROI);
 	//利用自适应ROI制作丝印去除模版
-	adpModel = silkMask(image2, adpROI);
+	adpModel = silkMask(image2, edgeMask, adpROI);
 	imshow("adpModel0", imageTemp);
 	imwrite("D:/661model0.jpg", imageTemp);
 	imshow("adpModel", adpModel);
@@ -95,15 +78,17 @@ int detect2d::scratchCheck(cv::Mat image)
 	imshow("Cut the silk", Mask);
 	imwrite("D:/663cutModel.jpg", Mask);
 
-	//cut the edge violently
-	edgeCut(Mask);
-	//imshow("Cut the edge", Mask);
+	//利用模版切除边缘部分
+	bitwise_and(Mask, edgeMask, Mask);
+	//edgeCut(Mask);
+	imshow("Cut the edge", Mask);
 	imwrite("D:/664cutEdge.jpg", Mask);
 
 	//Outstand the defect
 	Mat element11 = getStructuringElement(MORPH_RECT, Size(2, 2));
 	erode(Mask, Mask, element11);
 	dilate(Mask, Mask, element11);
+	imwrite("D:/665defect.jpg", Mask);
 
 	//Show all defects
 	cv::Mat imageShow, maskShow;
@@ -138,78 +123,77 @@ int detect2d::scratchCheck(cv::Mat image)
 	return errorID;
 }
 
-int detect2d::liquidDetect(cv::Mat origin, cv::Mat inputImage)
+cv::Mat detect2d::edgeMake(cv::Mat origin)
 {
-	int resultID = 1;
-
-	Mat element33 = getStructuringElement(MORPH_RECT, Size(3, 3));
-	Mat element44 = getStructuringElement(MORPH_RECT, Size(10, 10));
-	erode(inputImage, inputImage, element33);
-	dilate(inputImage, inputImage, element44);
-	imshow("liquid0", inputImage);
-
-	//Find the damages
-	vector<vector<Point>> contours;//定义轮廓
-	vector<vector<Point>> contoursvalue;  //选取符合大小的轮廓
-	vector<Vec4i> hierarchy;//各个轮廓的继承关系
-	//findContours函数寻找轮廓
-	findContours(inputImage, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
-	//寻找黑白点数量
-	int liquidNum = 0;
-	for (int i = 0; i < contours.size(); i++)
+	//1.Make the edge
+	//1.1二值化
+	Mat binary;
+	threshold(origin, binary, 220, 255, THRESH_BINARY_INV);
+	//1.2预处理
+	Mat element009 = getStructuringElement(MORPH_RECT, Size(9, 9));
+	Mat element007 = getStructuringElement(MORPH_RECT, Size(7, 7));
+	erode(binary, binary, element009);
+	dilate(binary, binary, element009);
+	dilate(binary, binary, element007);
+	erode(binary, binary, element007);
+	//1.3获取外轮廓
+	vector<vector<Point>> contours, contoursEdge;
+	vector<Vec4i> hierarchy;
+	findContours(binary, contours, hierarchy, CV_RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
+	//cout << "轮廓数量" << contours.size() << endl;
+	for (int i = 0; i < contours.size(); ++i)
 	{
-		int whiteNum = 0, blackNum = 0;
-		for (int j = 0; j < contours[i].size(); j++)
+		if (contourArea(contours[i]) > 500000)
+			contoursEdge.push_back(contours[i]);
+	}
+	//1.4画出外轮廓并获得外边缘
+	Mat edgeMask(binary.size(), CV_8U, Scalar(0));
+	drawContours(edgeMask, contoursEdge, -1, Scalar(255), FILLED);
+	Mat element101 = getStructuringElement(MORPH_RECT, Size(101, 101));
+	erode(edgeMask, edgeMask, element101);
+	dilate(edgeMask, edgeMask, element101);
+	//imshow("edge mask", edgeMask);
+	//imwrite("D:/VS_Project/Image_Test/edgeHandle/edgetest/mask1.jpg", mask1);
+
+	//2.得到边缘模版
+	Mat innerEdge;
+	Mat element039 = getStructuringElement(MORPH_RECT, Size(39, 39));
+	erode(edgeMask, innerEdge, element039);
+	bitwise_not(innerEdge, innerEdge);
+	imshow("annular mask", innerEdge);
+
+	//3.获取环形边缘区域
+	bitwise_and(origin, innerEdge, origin);
+	bitwise_and(origin, edgeMask, origin);
+	imshow("Annular Edge", origin);
+
+	//4.反转模版
+	bitwise_not(innerEdge, innerEdge);
+
+	for (int j = 0; j<innerEdge.rows; j++)
+	{
+		uchar* data1 = innerEdge.ptr<uchar>(j);
+		uchar* data2 = origin.ptr<uchar>(j);
+		for (int i = 0; i<innerEdge.cols; i++)
 		{
-			if (origin.at<uchar>(contours[i][j].y, contours[i][j].x) > 170)
+			if (i>maxCol)
 			{
-				whiteNum++;
+				data1[i] = 0;
+				data2[i] = 0;
 			}
-			if (origin.at<uchar>(contours[i][j].y, contours[i][j].x) < 100)
-			{
-				blackNum++;
-			}
-		}
-		if (whiteNum > 1 || blackNum > 1)
-		{
-			//cout << whiteNum << " and " << blackNum << endl;
-		}
-		if (whiteNum > 3 && blackNum > 3)
-		{
-			liquidNum++;
-			contoursvalue.push_back(contours[i]);
 		}
 	}
-	for (int i = 0; i < contoursvalue.size(); i++)
-	{
-		drawContours(origin, contoursvalue, i, Scalar(0), FILLED, 8, hierarchy, 0, Point());
-	}
-	if (contoursvalue.size() > 0)
-		resultID = 2;
-	cout << "There are " << liquidNum << " liquid defects." << endl;
-	imshow("liquid", origin);
-	imwrite("F:/liquidResult.jpg", origin);
 
-	return resultID;
+	return innerEdge;
 }
 
-int detect2d::blackDetect(cv::Mat inputImage)
+int detect2d::blackDetect(cv::Mat inputImage, cv::Mat edgeMask)
 {
 	int resultID = 1;
-	//二值化
-	threshold(inputImage, inputImage, 85, 255, THRESH_BINARY_INV);
-	//设置ROI
-	for (int j = 0; j<inputImage.rows; j++)
-	{
-		uchar* black = inputImage.ptr<uchar>(j);
-		for (int i = 0; i<inputImage.cols; i++)
-		{
-			if (j<minRow - 0 || j>maxRow + 0 || i<minCol || i>maxCol + 0)
-			{
-				black[i] = 0;
-			}
-		}
-	}
+	//二值化 此阈值不稳定
+	threshold(inputImage, inputImage, 75, 255, THRESH_BINARY_INV);
+	//通过边缘模版切除边缘外区域
+	bitwise_and(inputImage, edgeMask, inputImage);
 	//处理图像
 	Mat element1 = getStructuringElement(MORPH_RECT, Size(3, 3));
 	Mat element2 = getStructuringElement(MORPH_RECT, Size(12, 12));
@@ -219,7 +203,7 @@ int detect2d::blackDetect(cv::Mat inputImage)
 	//Find the black
 	vector<vector<Point> > contours;//定义轮廓
 	vector<Vec4i> hierarchy;//各个轮廓的继承关系
-	//findContours函数寻找轮廓
+							//findContours函数寻找轮廓
 	findContours(inputImage, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
 	int j = 0;
 	//计算轮廓面积
@@ -229,7 +213,6 @@ int detect2d::blackDetect(cv::Mat inputImage)
 		double area = moms.m00;    //零阶矩即为二值图像的面积  double area = moms.m00;  
 		if (area > 5)
 		{
-			//drawContours(imageTemp, contours, i, Scalar(0), FILLED, 8, hierarchy, 0, Point());
 			j = j + 1;
 		}
 	}
@@ -242,226 +225,18 @@ int detect2d::blackDetect(cv::Mat inputImage)
 	return resultID;
 }
 
-int detect2d::scratchDetect(cv::Mat origin, cv::Mat inputImage)
-{
-	int resultID = 1;
-	Mat element33 = getStructuringElement(MORPH_RECT, Size(3, 3));
-	Mat element88 = getStructuringElement(MORPH_RECT, Size(6, 6));
-	Mat element55 = getStructuringElement(MORPH_RECT, Size(3, 3));
-	erode(inputImage, inputImage, element33);
-	imshow("scratch000", inputImage);
-	dilate(inputImage, inputImage, element88);
-	imshow("scratch00", inputImage);
-	erode(inputImage, inputImage, element55);
-	imshow("scratch0", inputImage);
-	imwrite("F://Scratch.jpg", inputImage);
-
-	//Find the damages
-	vector<vector<Point>> contours;//定义轮廓
-	vector<vector<Point>> contoursvalue;  //选取符合大小的轮廓
-	vector<Vec4i> hierarchy;//各个轮廓的继承关系
-	//findContours函数寻找轮廓
-	findContours(inputImage, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
-	int j = 0;
-	//计算轮廓面积及周长
-	vector<double> length;
-	for (int i = 0; i < contours.size(); i++)
-	{
-		Moments moms = moments(Mat(contours[i]));
-		double area = moms.m00;								 //零阶矩即为二值图像的面积  double area = moms.m00;  
-		double templength = arcLength(contours[i], true);    //计算周长
-
-		if (area > 60 && area < 10000)	//面积筛选
-		{
-			//cout << "are: " << area << endl;
-			double r = templength / (2 * 3.1415);
-			if (3.1415 * r * r > 1.8 * area && templength > 40)
-			{
-				contoursvalue.push_back(contours[i]);
-				length.push_back(templength);
-				j++;
-				//cout << "The area: " << area << " and templength: " << templength << endl;
-			}
-		}
-	}
-	for (int i = 0; i < contoursvalue.size(); i++)
-	{
-		drawContours(origin, contoursvalue, i, Scalar(0), FILLED, 8, hierarchy, 0, Point());
-	}
-	imshow("scratch", origin);
-	imwrite("F:/scratchResult.jpg", origin);
-
-	//计算实际长度,判断长中短划痕数量
-	double scale = 1600.0/116.5;
-	int longScratch = 0, midScratch = 0, shortScratch = 0;
-	for (int g = 0; g < length.size(); g++)
-	{
-		length[g] /= scale;
-		if (length[g] / 2 > 1)
-		{
-			if (length[g] / 2 > 10)
-			{
-				if (length[g] / 2 > 20)
-					longScratch++;
-				else
-					midScratch++;
-			}
-			else
-			{
-				shortScratch++;
-			}
-		}
-	}
-	//cout << couter << endl;
-	if (longScratch * 1 + midScratch*0.5 + shortScratch*0.33 > 1)
-	{
-		cout << "Scratch Long:" << longScratch << ", Mid: " << midScratch << ", Short: " << shortScratch << ". NG!" << endl;
-		resultID = 2;
-	}
-
-	return resultID;
-}
-
-int detect2d::alDetect(cv::Mat origin, cv::Mat inputImage)
-{
-	int resultID = 1;
-	Mat elementAl = getStructuringElement(MORPH_RECT, Size(3, 3));
-	erode(inputImage, inputImage, elementAl);
-	//dilate(InputImage, InputImage, elementAl);
-	imshow("Al0", inputImage);
-	imwrite("F:/Al.jpg", inputImage);
-
-	vector<vector<Point>> contours;//定义轮廓
-	vector<vector<Point>> contoursfinal;
-	vector<Vec4i> hierarchy;//各个轮廓的继承关系
-	//findContours函数寻找轮廓
-	findContours(inputImage, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
-
-	//检测漏铝
-	vector<double> mean;
-	for (int Size = 0; Size < contours.size(); Size++)
-	{
-		double value = 0;
-		double meanValue = 0;
-
-		for (int Size0 = 0; Size0 < contours[Size].size(); Size0++)
-		{
-			value += origin.at<uchar>(contours[Size][Size0].y, contours[Size][Size0].x);
-		}
-		meanValue = value / contours[Size].size();
-		mean.push_back(meanValue);
-
-		if (meanValue > 190)	//设置阈值
-		{
-			//cout << "第" << Size + 1 << "个轮廓漏铝: " << meanValue << endl;
-			contoursfinal.push_back(contours[Size]);
-		}
-	}
-	//sort(mean.begin(), mean.end(), greater<double>());
-	//cout << "最大值: " << mean[0] << endl;
-	for (int i = 0; i < contoursfinal.size(); i++)
-	{
-		drawContours(origin, contoursfinal, i, Scalar(0), FILLED, 8, hierarchy, 0, Point());
-	}
-	imshow("Al", origin);
-	imwrite("F:/AlResult.jpg", origin);
-
-	if (contoursfinal.size() > 0)
-		resultID = 2;
-
-	return resultID;
-}
-
-void detect2d::showDefect(cv::Mat finalShow, cv::Mat inputImage)
-{
-	Mat element33 = getStructuringElement(MORPH_RECT, Size(3, 3));
-	Mat element44 = getStructuringElement(MORPH_RECT, Size(8, 8));
-	erode(inputImage, inputImage, element33);
-	dilate(inputImage, inputImage, element44);
-	("All defects", inputImage);
-	imwrite("D:/665defect.jpg", inputImage);
-
-	//Find the damages
-	vector<vector<Point> > contours;//定义轮廓
-	vector<Vec4i> hierarchy;//各个轮廓的继承关系
-	//findContours函数寻找轮廓
-	findContours(inputImage, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
-	int j = 0;
-	//计算轮廓面积
-	for (int i = 0; i < contours.size(); i++)
-	{
-		Moments moms = moments(Mat(contours[i]));
-		double area = moms.m00;    //零阶矩即为二值图像的面积  double area = moms.m00;  
-								   //如果面积超出了设定的范围，则不再考虑该斑点  
-		if (area > 80 && area < 10000)
-		{
-			drawContours(finalShow, contours, i, Scalar(0), FILLED, 8, hierarchy, 0, Point());
-			j = j + 1;
-		}
-	}
-	char t[256];
-	snprintf(t, sizeof(t), "%01d", j);
-	string s = t;
-	string txt = "NG number : " + s;
-	putText(finalShow, txt, Point(20, 30), CV_FONT_HERSHEY_COMPLEX, 1, Scalar(0, 0, 255), 2, 8);
-
-	if (2 > 1)//mark the edge
-	{
-		for (int j = 0; j<finalShow.rows; j++)
-		{
-			uchar* datad = finalShow.ptr<uchar>(j);
-			for (int i = 0; i<finalShow.cols; i++)
-			{
-				if (j == minRow || j == maxRow || i == minCol || i == maxCol)
-				{
-					datad[i] = 0;
-				}
-			}
-		}
-	}
-
-	imshow("drawing image", finalShow);
-	imwrite("D:/666final.jpg", finalShow);
-}
-
-void detect2d::edgeCut(cv::Mat inputImage)
-{
-	for (int j = 0; j<inputImage.rows; j++)
-	{
-		uchar* data1 = inputImage.ptr<uchar>(j);
-		for (int i = 0; i<inputImage.cols; i++)
-		{
-			if (j<minRow || j>maxRow || i<minCol || i>maxCol)
-			{
-				data1[i] = 0;
-			}
-			//if (j==minRow || j==maxRow || i==minCol || i==maxCol)
-			//{
-			//	data1[i] = 255;
-			//}
-		}
-	}
-}
-
-cv::Mat detect2d::silkMask(cv::Mat inputImage, cv::Mat adpROI)
+cv::Mat detect2d::silkMask(cv::Mat inputImage, cv::Mat edgeMask, cv::Mat adpROI)
 {
 	//1.二值化
 	surfaceIndex = 1;
 	Mat binary;
+	//Mat bilateral;
+	//bilateralFilter(inputImage, bilateral, 10, 20, 5);//双边滤波一下
+	//imshow("双边滤波", bilateral);
 	threshold(inputImage, binary, 240, 255, THRESH_BINARY);
 	//adaptiveThreshold(img, binary, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY_INV, 1000 * 2 + 1, 8);
 	//1.2.Set the ROI
-	for (int j = 0; j<binary.rows; j++)
-	{
-		uchar* bina = binary.ptr<uchar>(j);
-		for (int i = 0; i<binary.cols; i++)
-		{
-			if (j<minRow-10 || j>maxRow+10 || i<minCol || i>maxCol+50)
-			{
-				bina[i] = 0;
-			}
-		}
-	}
+	bitwise_and(binary, edgeMask, binary);
 	imshow("Binary", binary);
 
 	//2.膨胀和腐蚀
@@ -552,11 +327,11 @@ cv::Mat detect2d::silkMask(cv::Mat inputImage, cv::Mat adpROI)
 		//erode(printing, printing, elementP25);
 		dilate(printing, printing, elementP5);
 
-		imshow("priting", printing);
+		//imshow("priting", printing);
 
 		bitwise_or(ContoursMast, printing, ContoursMast);
 	}
-	
+
 
 	////3.3.与自适应ROI结合
 	//bitwise_and(ContoursMast, adpROI, ContoursMast);
@@ -623,6 +398,280 @@ cv::Mat detect2d::silkMask(cv::Mat inputImage, cv::Mat adpROI)
 	return ROIImg2;
 }
 
+int detect2d::liquidDetect(cv::Mat origin, cv::Mat inputImage)
+{
+	int resultID = 1;
+
+	Mat element33 = getStructuringElement(MORPH_RECT, Size(3, 3));
+	Mat element44 = getStructuringElement(MORPH_RECT, Size(10, 10));
+	erode(inputImage, inputImage, element33);
+	dilate(inputImage, inputImage, element44);
+	imshow("liquid0", inputImage);
+
+	//Find the damages
+	vector<vector<Point>> contours;//定义轮廓
+	vector<vector<Point>> contoursvalue;  //选取符合大小的轮廓
+	vector<Vec4i> hierarchy;//各个轮廓的继承关系
+	//findContours函数寻找轮廓
+	findContours(inputImage, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+	//寻找黑白点数量
+	int liquidNum = 0;
+	for (int i = 0; i < contours.size(); i++)
+	{
+		int whiteNum = 0, blackNum = 0;
+		for (int j = 0; j < contours[i].size(); j++)
+		{
+			if (origin.at<uchar>(contours[i][j].y, contours[i][j].x) > 170)
+			{
+				whiteNum++;
+			}
+			if (origin.at<uchar>(contours[i][j].y, contours[i][j].x) < 100)
+			{
+				blackNum++;
+			}
+		}
+		if (whiteNum > 1 || blackNum > 1)
+		{
+			//cout << whiteNum << " and " << blackNum << endl;
+		}
+		if (whiteNum > 3 && blackNum > 3)
+		{
+			liquidNum++;
+			contoursvalue.push_back(contours[i]);
+		}
+	}
+	for (int i = 0; i < contoursvalue.size(); i++)
+	{
+		drawContours(origin, contoursvalue, i, Scalar(0), FILLED, 8, hierarchy, 0, Point());
+	}
+	if (contoursvalue.size() > 0)
+		resultID = 2;
+	cout << "There are " << liquidNum << " liquid defects." << endl;
+	imshow("liquid", origin);
+	imwrite("F:/liquidResult.jpg", origin);
+
+	return resultID;
+}
+
+int detect2d::alDetect(cv::Mat origin, cv::Mat inputImage)
+{
+	int resultID = 1;
+	Mat elementAl = getStructuringElement(MORPH_RECT, Size(3, 3));
+	erode(inputImage, inputImage, elementAl);
+	//dilate(InputImage, InputImage, elementAl);
+	imshow("Al0", inputImage);
+	imwrite("F:/Al.jpg", inputImage);
+
+	vector<vector<Point>> contours;//定义轮廓
+	vector<vector<Point>> contoursfinal;
+	vector<Vec4i> hierarchy;//各个轮廓的继承关系
+							//findContours函数寻找轮廓
+	findContours(inputImage, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+
+	//检测漏铝
+	vector<double> mean;
+	for (int Size = 0; Size < contours.size(); Size++)
+	{
+		double value = 0;
+		double meanValue = 0;
+
+		for (int Size0 = 0; Size0 < contours[Size].size(); Size0++)
+		{
+			value += origin.at<uchar>(contours[Size][Size0].y, contours[Size][Size0].x);
+		}
+		meanValue = value / contours[Size].size();
+		mean.push_back(meanValue);
+
+		if (meanValue > 190)	//设置阈值
+		{
+			//cout << "第" << Size + 1 << "个轮廓漏铝: " << meanValue << endl;
+			contoursfinal.push_back(contours[Size]);
+		}
+	}
+	//sort(mean.begin(), mean.end(), greater<double>());
+	//cout << "最大值: " << mean[0] << endl;
+	for (int i = 0; i < contoursfinal.size(); i++)
+	{
+		drawContours(origin, contoursfinal, i, Scalar(0), FILLED, 8, hierarchy, 0, Point());
+	}
+	imshow("Al", origin);
+	imwrite("F:/AlResult.jpg", origin);
+
+	if (contoursfinal.size() > 0)
+		resultID = 2;
+
+	return resultID;
+}
+
+int detect2d::scratchDetect(cv::Mat origin, cv::Mat inputImage)
+{
+	int resultID = 1;
+
+	////Make a adaptive printing in Chinese face
+	//Mat origin2, adpPrinting;
+	//origin.copyTo(origin2);
+	//for (int j = 0; j<origin2.rows; j++)
+	//{
+	//	uchar* data = origin2.ptr<uchar>(j);
+	//	for (int i = 0; i<origin2.cols; i++)
+	//	{
+	//		data[i] = 255 - data[i];
+	//	}
+	//}
+	//imwrite("F:/119Scratch.jpg", inputImage);
+	//adaptiveThreshold(origin2, adpPrinting, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY_INV, 6 * 2 + 1, 26);
+	//Mat element22 = getStructuringElement(MORPH_RECT, Size(4, 4));
+	//dilate(adpPrinting, adpPrinting, element22);
+	//imwrite("F:/110adpPrinting.jpg", adpPrinting);
+	//subtract(inputImage, adpPrinting, inputImage);
+	//imwrite("F:/111Scratch.jpg", inputImage);
+
+	Mat element33 = getStructuringElement(MORPH_RECT, Size(3, 3));
+	Mat element88 = getStructuringElement(MORPH_RECT, Size(6, 6));
+	Mat element55 = getStructuringElement(MORPH_RECT, Size(3, 3));
+	erode(inputImage, inputImage, element33);
+	//imshow("scratch000", inputImage);
+	dilate(inputImage, inputImage, element88);
+	//imshow("scratch00", inputImage);
+	erode(inputImage, inputImage, element55);
+	//imshow("scratch0", inputImage);
+	imwrite("F://Scratch.jpg", inputImage);
+
+	//Find the damages
+	vector<vector<Point>> contours;//定义轮廓
+	vector<vector<Point>> contoursvalue;  //选取符合大小的轮廓
+	vector<Vec4i> hierarchy;//各个轮廓的继承关系
+	//findContours函数寻找轮廓
+	findContours(inputImage, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+	int j = 0;
+	//计算轮廓面积及周长
+	vector<double> length;
+	for (int i = 0; i < contours.size(); i++)
+	{
+		Moments moms = moments(Mat(contours[i]));
+		double area = moms.m00;								 //零阶矩即为二值图像的面积  double area = moms.m00;  
+		double templength = arcLength(contours[i], true);    //计算周长
+
+		if (area > 60 && area < 10000)	//面积筛选
+		{
+			//cout << "are: " << area << endl;
+			double r = templength / (2 * 3.1415);
+			if (3.1415 * r * r > 1.8 * area && templength > 40)
+			{
+				contoursvalue.push_back(contours[i]);
+				length.push_back(templength);
+				j++;
+				//cout << "The area: " << area << " and templength: " << templength << endl;
+			}
+		}
+	}
+	for (int i = 0; i < contoursvalue.size(); i++)
+	{
+		drawContours(origin, contoursvalue, i, Scalar(0), FILLED, 8, hierarchy, 0, Point());
+	}
+	imshow("scratch", origin);
+	imwrite("F:/scratchResult.jpg", origin);
+
+	//计算实际长度,判断长中短划痕数量
+	double scale = 1600.0/116.5;
+	int longScratch = 0, midScratch = 0, shortScratch = 0;
+	for (int g = 0; g < length.size(); g++)
+	{
+		length[g] /= scale;
+		if (length[g] / 2 > 1)
+		{
+			if (length[g] / 2 > 15)
+			{
+				if (length[g] / 2 > 30)
+					longScratch++;
+				else
+					midScratch++;
+			}
+			else
+			{
+				shortScratch++;
+			}
+		}
+	}
+	//cout << couter << endl;
+	if (longScratch * 1 + midScratch*0.166 + shortScratch*0.125 > 1)
+	{
+		cout << "Scratch Long:" << longScratch << ", Mid: " << midScratch << ", Short: " << shortScratch << ". NG!" << endl;
+		resultID = 2;
+	}
+
+	return resultID;
+}
+
+void detect2d::showDefect(cv::Mat finalShow, cv::Mat inputImage)
+{
+	Mat element33 = getStructuringElement(MORPH_RECT, Size(3, 3));
+	Mat element44 = getStructuringElement(MORPH_RECT, Size(8, 8));
+	erode(inputImage, inputImage, element33);
+	dilate(inputImage, inputImage, element44);
+
+	//Find the damages
+	vector<vector<Point> > contours;//定义轮廓
+	vector<Vec4i> hierarchy;//各个轮廓的继承关系
+	//findContours函数寻找轮廓
+	findContours(inputImage, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+	int j = 0;
+	//计算轮廓面积
+	for (int i = 0; i < contours.size(); i++)
+	{
+		Moments moms = moments(Mat(contours[i]));
+		double area = moms.m00;    //零阶矩即为二值图像的面积  double area = moms.m00;  
+								   //如果面积超出了设定的范围，则不再考虑该斑点  
+		if (area > 80 && area < 10000)
+		{
+			drawContours(finalShow, contours, i, Scalar(0), FILLED, 8, hierarchy, 0, Point());
+			j = j + 1;
+		}
+	}
+	char t[256];
+	snprintf(t, sizeof(t), "%01d", j);
+	string s = t;
+	string txt = "NG number : " + s;
+	putText(finalShow, txt, Point(20, 30), CV_FONT_HERSHEY_COMPLEX, 1, Scalar(0, 0, 255), 2, 8);
+
+	//if (2 > 1)//mark the edge
+	//{
+	//	for (int j = 0; j<finalShow.rows; j++)
+	//	{
+	//		uchar* datad = finalShow.ptr<uchar>(j);
+	//		for (int i = 0; i<finalShow.cols; i++)
+	//		{
+	//			if (j == minRow || j == maxRow || i == minCol || i == maxCol)
+	//			{
+	//				datad[i] = 0;
+	//			}
+	//		}
+	//	}
+	//}
+
+	imshow("drawing image", finalShow);
+	imwrite("D:/666final.jpg", finalShow);
+}
+
+void detect2d::edgeCut(cv::Mat inputImage)
+{
+	for (int j = 0; j<inputImage.rows; j++)
+	{
+		uchar* data1 = inputImage.ptr<uchar>(j);
+		for (int i = 0; i<inputImage.cols; i++)
+		{
+			if (j<minRow || j>maxRow || i<minCol || i>maxCol)
+			{
+				data1[i] = 0;
+			}
+			//if (j==minRow || j==maxRow || i==minCol || i==maxCol)
+			//{
+			//	data1[i] = 255;
+			//}
+		}
+	}
+}
+
 cv::Mat detect2d::preProcess(cv::Mat inputImage)
 {
 	cv::Mat canny, Mask;
@@ -645,9 +694,9 @@ cv::Mat detect2d::preProcess(cv::Mat inputImage)
 	}
 	/*
 	namedWindow("dyn_threshold");
-	imshow("dyn_threshold", image2);
+	imshow("dyn_threshold", inputImage);
 	int value = 0;
-	createTrackbar("pos", "dyn_threshold", &value, 2550, onChangeTrackBar, &image2);
+	createTrackbar("pos", "dyn_threshold", &value, 30, onChangeTrackBar, &inputImage);
 	waitKey();
 	*/
 	adaptiveThreshold(inputImage, Mask, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY_INV, 6 * 2 + 1, 8);
