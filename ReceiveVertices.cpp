@@ -31,6 +31,7 @@ char path_suffix[] = ".jpg";
 char path_3DHor_suffix[] = "_Hor.jpg";
 char path_3DVert_suffix[] = "_Vert.jpg";
 int counter = 0;
+int errorReport;
 int main(int argc, char* argv[])
 {
 	
@@ -44,64 +45,63 @@ int main(int argc, char* argv[])
 		sprintf(strPath2D, "%s%s%s", path2D_prefix, str0, path_suffix);
 		sprintf(strPath3DVert, "%s%s%s", path3D_prefix, str0, path_3DVert_suffix);
 		sprintf(strPath3DHor, "%s%s%s", path3D_prefix, str0, path_3DHor_suffix);
-/*
-#ifdef GRAB
-		// The exit code of the sample application.
-		int exitCode = 0;
-		
-		// Before using any pylon methods, the pylon runtime must be initialized. 
-		PylonInitialize();
-		cout << "Please put a side of the next battery in basler!" << endl;
-		getchar();
-		try
-		{
-			
-			CInstantCamera camera(CTlFactory::GetInstance().CreateFirstDevice());// Create an instant camera object with the camera device found first.
-			//cout << "Using device " << camera.GetDeviceInfo().GetModelName() << endl;// Print the model name of the camera.
-			camera.MaxNumBuffer = 5;
-			camera.StartGrabbing(c_countOfImagesToGrab);// Start the grabbing of c_countOfImagesToGrab images.
-			CGrabResultPtr ptrGrabResult;// This smart pointer will receive the grab result data.
-			camera.IsGrabbing();
-			camera.RetrieveResult(5000, ptrGrabResult, TimeoutHandling_ThrowException);// Wait for an image and then retrieve it. A timeout of 5000 ms is used.
 
-			if (ptrGrabResult->GrabSucceeded())// Image grabbed successfully?
-			{
-				// Access the image data.
-				cout << "SizeX: " << ptrGrabResult->GetWidth()<< "SizeY: " << ptrGrabResult->GetHeight() << endl;
-				const uint8_t *pImageBuffer = (uint8_t *)ptrGrabResult->GetBuffer();
-				//cout << "Gray value of first pixel: " << (uint32_t)pImageBuffer[0] << endl << endl;
-
-				imageBasler = cv::Mat(ptrGrabResult->GetHeight(), ptrGrabResult->GetWidth(), CV_8UC1, (uint8_t *)ptrGrabResult->GetBuffer());
-				cv::imwrite(strPath2D, imageBasler);
-
-				boost::timer t2;
-				cout << "Time of scratch check: " << t2.elapsed() << endl;
-			}
-			else
-			{
-				cout << "Error: " << ptrGrabResult->GetErrorCode() << " " << ptrGrabResult->GetErrorDescription() << endl;
-			}
-			
-			
-		}
-		catch (const GenericException &e)
-		{
-			// Error handling.
-			cerr << "An exception occurred." << endl
-				<< e.GetDescription() << endl;
-			exitCode = 1;
-		}
-		// Releases all pylon resources. 
-		PylonTerminate();
-		cout << strPath2D << endl;
-		
-
-#endif
-#ifdef READ
-		cv::Mat img = cv::imread(strPath2D,0);
-		int errorReport = Detect2d.scratchCheck(img);
-#endif
-*/
+//#ifdef GRAB
+//		// The exit code of the sample application.
+//		int exitCode = 0;
+//		
+//		// Before using any pylon methods, the pylon runtime must be initialized. 
+//		PylonInitialize();
+//		cout << "Please put a side of the next battery in basler!" << endl;
+//		getchar();
+//		try
+//		{
+//			
+//			CInstantCamera camera(CTlFactory::GetInstance().CreateFirstDevice());// Create an instant camera object with the camera device found first.
+//			//cout << "Using device " << camera.GetDeviceInfo().GetModelName() << endl;// Print the model name of the camera.
+//			camera.MaxNumBuffer = 5;
+//			camera.StartGrabbing(c_countOfImagesToGrab);// Start the grabbing of c_countOfImagesToGrab images.
+//			CGrabResultPtr ptrGrabResult;// This smart pointer will receive the grab result data.
+//			camera.IsGrabbing();
+//			camera.RetrieveResult(5000, ptrGrabResult, TimeoutHandling_ThrowException);// Wait for an image and then retrieve it. A timeout of 5000 ms is used.
+//
+//			if (ptrGrabResult->GrabSucceeded())// Image grabbed successfully?
+//			{
+//				// Access the image data.
+//				cout << "SizeX: " << ptrGrabResult->GetWidth()<< "SizeY: " << ptrGrabResult->GetHeight() << endl;
+//				const uint8_t *pImageBuffer = (uint8_t *)ptrGrabResult->GetBuffer();
+//				//cout << "Gray value of first pixel: " << (uint32_t)pImageBuffer[0] << endl << endl;
+//
+//				imageBasler = cv::Mat(ptrGrabResult->GetHeight(), ptrGrabResult->GetWidth(), CV_8UC1, (uint8_t *)ptrGrabResult->GetBuffer());
+//				cv::imwrite(strPath2D, imageBasler);
+//
+//				boost::timer t2;
+//				cout << "Time of scratch check: " << t2.elapsed() << endl;
+//			}
+//			else
+//			{
+//				cout << "Error: " << ptrGrabResult->GetErrorCode() << " " << ptrGrabResult->GetErrorDescription() << endl;
+//			}
+//			
+//			
+//		}
+//		catch (const GenericException &e)
+//		{
+//			// Error handling.
+//			cerr << "An exception occurred." << endl
+//				<< e.GetDescription() << endl;
+//			exitCode = 1;
+//		}
+//		// Releases all pylon resources. 
+//		PylonTerminate();
+//		cout << strPath2D << endl;
+//		
+//
+//#endif
+//#ifdef READ
+//		cv::Mat img = cv::imread(strPath2D,0);
+//		errorReport = Detect2d.scratchCheck(img);
+//#endif
 
 
 
@@ -229,7 +229,7 @@ int main(int argc, char* argv[])
 #ifdef READ
 		cv::Mat imgdepthVert = cv::imread(strPath3DVert, 0);
 		cv::Mat imgdepthHor = cv::imread(strPath3DHor, 0);
-		int errorReport = Flatulence.flatulenceCheck(imgdepthVert, 127, 2.3, 240, 35);
+		errorReport = Flatulence.flatulenceCheck(imgdepthVert, 127, 2.3, 240, 35);
 		errorReport = Detect3d.prejudge(imgdepthVert);
 		errorReport = Detect3d.prejudge(imgdepthHor);
 #endif

@@ -68,6 +68,22 @@ void detect3d::findModel(cv::Mat depthImage,string path,Point* matchLocation,flo
 void detect3d::makeMask(cv::Mat depthImage,cv::Mat erodeBinary,int threshold,int erodeTimes,int* classify,Point* matchLocation,int type)
 {
 	cv::Mat src;
+	cv::Mat image2D, image3D;
+	double fx, fy, scale;
+	Point matchLocation_2Drecycle[2];
+	Point matchLocation_2Dapple[2];
+	Point matchLocation_2Derror[2];
+	Point matchLocation_3Drecycle[2];
+	Point matchLocation_3Dapple[2];
+	Point matchLocation_3Derror[2];
+	string path_2D = "D:/661model.jpg";
+	string path_3D = "D:/Data/3D/0001_Hor.jpg";
+	string path_3Drecycle = "D:/model/model_recycle.png";
+	string path_3Derror = "D:/model/model_error.png";
+	string path_3Dapple = "D:/model/model_apple.png";
+	string path_2Drecycle = "D:/model/model_2Drecycle.png";
+	/*string path_2Derror = "D:/model/model_2Derror.png";*/
+	string path_2Dapple = "D:/model/model_2Dapple.png";
 	depthImage.copyTo(src);
 
 	for (int i = 0; i<src.rows; i++)
@@ -80,139 +96,52 @@ void detect3d::makeMask(cv::Mat depthImage,cv::Mat erodeBinary,int threshold,int
 				src.at<uchar>(i, j) = 255;
 		}
 	}
-
-	//imshow("mask1",src);
-	//waitKey();
-	if (type == 0)//big apple battery
-	{
-		//make silk mask
-		if (*classify == 0)//recycle
-		{
-			rectangle(src, matchLocation[0], matchLocation[1], Scalar(0, 0, 255), CV_FILLED, 8, 0);
-			rectangle(src, Point(matchLocation[0].x + 30, matchLocation[0].y - 660), \
-				Point(matchLocation[0].x + 75, matchLocation[0].y - 605), Scalar(0, 0, 255), CV_FILLED, 8, 0);//apple
-
-			rectangle(src, Point(matchLocation[0].x, matchLocation[0].y + 88), \
-				Point(matchLocation[0].x + 155, matchLocation[0].y + 155), Scalar(0, 0, 255), CV_FILLED, 8, 0);//line
-
-			rectangle(src, Point(matchLocation[0].x - 10, matchLocation[0].y - 550), \
-				Point(matchLocation[0].x + 115, matchLocation[0].y - 500), Scalar(0, 0, 255), CV_FILLED, 8, 0);//words
-
-			rectangle(src, Point(matchLocation[0].x + 20, matchLocation[0].y - 100), \
-				Point(matchLocation[0].x + 75, matchLocation[0].y - 40), Scalar(0, 0, 255), CV_FILLED, 8, 0);//logo
-
-			rectangle(src, Point(0, 0), Point(depthImage.cols, 10), Scalar(0, 0, 255), CV_FILLED, 8, 0);//header
-
-			rectangle(src, Point(0, matchLocation[0].y + 200), \
-				Point(depthImage.cols, depthImage.rows), Scalar(0, 0, 255), CV_FILLED, 8, 0);//bottom
-
-		}
-		if (*classify == 1)//error
-		{
-			rectangle(src, matchLocation[0], matchLocation[1], Scalar(0, 0, 255), CV_FILLED, 8, 0);
-
-			rectangle(src, Point(matchLocation[0].x - 75, matchLocation[0].y + 275), \
-				Point(matchLocation[0].x + 85, matchLocation[0].y + 320), Scalar(0, 0, 255), CV_FILLED, 8, 0);//line
-
-			rectangle(src, Point(matchLocation[1].x, matchLocation[1].y), \
-				Point(matchLocation[0].x + 150, matchLocation[0].y), Scalar(0, 0, 255), CV_FILLED, 8, 0);//error right
-
-			rectangle(src, Point(matchLocation[0].x - 5, matchLocation[0].y - 630), \
-				Point(matchLocation[0].x + 175, matchLocation[0].y - 530), Scalar(0, 0, 255), CV_FILLED, 8, 0);//tags
-			rectangle(src, Point(0, 0), Point(depthImage.cols, 40), Scalar(0, 0, 255), CV_FILLED, 8, 0);//header
-
-			rectangle(src, Point(0, matchLocation[0].y + 335), \
-				Point(depthImage.cols, depthImage.rows), Scalar(0, 0, 255), CV_FILLED, 8, 0);//bottom
-
-		}
-		if (*classify == 2)//apple
-		{
-			rectangle(src, matchLocation[0], matchLocation[1], Scalar(0, 0, 255), CV_FILLED, 8, 0);
-
-			rectangle(src, Point(matchLocation[0].x, matchLocation[0].y + 760), \
-				Point(matchLocation[0].x + 200, matchLocation[0].y + 800), Scalar(0, 0, 255), CV_FILLED, 8, 0);//line
-			rectangle(src, Point(0, 0), Point(depthImage.cols, 15), Scalar(0, 0, 255), CV_FILLED, 8, 0);//header
-
-			rectangle(src, Point(0, matchLocation[0].y + 860), \
-				Point(depthImage.cols, depthImage.rows), Scalar(0, 0, 255), CV_FILLED, 8, 0);//bottom
-
-		}
-		if (*classify == 3)//no
-		{
-			rectangle(src, Point(0, 0), Point(depthImage.cols, 40), Scalar(0, 0, 255), CV_FILLED, 8, 0);//header
-			rectangle(src, Point(0, depthImage.rows - 50), \
-				Point(depthImage.cols, depthImage.rows), Scalar(0, 0, 255), CV_FILLED, 8, 0);//bottom
-		}
-	}
-	if (type == 1)//small apple battery
-	{
-		if (*classify == 0)//recycle
-		{
-			rectangle(src, matchLocation[0], matchLocation[1], Scalar(0, 0, 255), CV_FILLED, 8, 0);
-			rectangle(src, Point(matchLocation[0].x + 30, matchLocation[0].y - 620), \
-				Point(matchLocation[0].x + 75, matchLocation[0].y - 555), Scalar(0, 0, 255), CV_FILLED, 8, 0);//apple
-
-			//rectangle(src, Point(matchLocation[0].x, matchLocation[0].y + 88), \
-				Point(matchLocation[0].x + 155, matchLocation[0].y + 155), Scalar(0, 0, 255), CV_FILLED, 8, 0);//line
-
-			//rectangle(src, Point(matchLocation[0].x - 10, matchLocation[0].y - 550), \
-				Point(matchLocation[0].x + 115, matchLocation[0].y - 500), Scalar(0, 0, 255), CV_FILLED, 8, 0);//words
-
-			rectangle(src, Point(matchLocation[0].x + 20, matchLocation[0].y - 100), \
-				Point(matchLocation[0].x + 75, matchLocation[0].y - 40), Scalar(0, 0, 255), CV_FILLED, 8, 0);//logo
-
-			rectangle(src, Point(0, 0), Point(depthImage.cols, 10), Scalar(0, 0, 255), CV_FILLED, 8, 0);//header
-
-			//rectangle(src, Point(0, matchLocation[0].y + 200), \
-							Point(depthImage.cols, depthImage.rows), Scalar(0, 0, 255), CV_FILLED, 8, 0);//bottom
-
-		}
-		if (*classify == 1)//error
-		{
-			rectangle(src, matchLocation[0], matchLocation[1], Scalar(0, 0, 255), CV_FILLED, 8, 0);
-
-			//rectangle(src, Point(matchLocation[0].x - 75, matchLocation[0].y + 275), \
-				Point(matchLocation[0].x + 85, matchLocation[0].y + 320), Scalar(0, 0, 255), CV_FILLED, 8, 0);//line
-
-			rectangle(src, Point(matchLocation[1].x, matchLocation[1].y), \
-				Point(matchLocation[0].x + 130, matchLocation[0].y), Scalar(0, 0, 255), CV_FILLED, 8, 0);//error right
-
-			rectangle(src, Point(matchLocation[0].x - 20, matchLocation[0].y-7), \
-				Point(matchLocation[0].x - 40, matchLocation[0].y+17), Scalar(0, 0, 255), CV_FILLED, 8, 0);//error left
-
-			rectangle(src, Point(matchLocation[0].x , matchLocation[0].y +200), \
-				Point(matchLocation[0].x + 185, matchLocation[0].y +280), Scalar(0, 0, 255), CV_FILLED, 8, 0);//tags
-			//rectangle(src, Point(0, 0), Point(depthImage.cols, 40), Scalar(0, 0, 255), CV_FILLED, 8, 0);//header
-
-			rectangle(src, Point(0, matchLocation[0].y + 300), \
-				Point(depthImage.cols, depthImage.rows), Scalar(0, 0, 255), CV_FILLED, 8, 0);//bottom
-
-		}
-		if (*classify == 2)//apple
-		{
-			rectangle(src, matchLocation[0], matchLocation[1], Scalar(0, 0, 255), CV_FILLED, 8, 0);
-
-			rectangle(src, Point(matchLocation[0].x, matchLocation[0].y + 760), \
-				Point(matchLocation[0].x + 200, matchLocation[0].y + 800), Scalar(0, 0, 255), CV_FILLED, 8, 0);//line
-			rectangle(src, Point(0, 0), Point(depthImage.cols, 15), Scalar(0, 0, 255), CV_FILLED, 8, 0);//header
-
-			rectangle(src, Point(0, matchLocation[0].y + 860), \
-				Point(depthImage.cols, depthImage.rows), Scalar(0, 0, 255), CV_FILLED, 8, 0);//bottom
-
-		}
-		if (*classify == 3)//no
-		{
-			rectangle(src, Point(0, 0), Point(depthImage.cols, 30), Scalar(0, 0, 255), CV_FILLED, 8, 0);//header
-			rectangle(src, Point(0, depthImage.rows - 40), \
-				Point(depthImage.cols, depthImage.rows), Scalar(0, 0, 255), CV_FILLED, 8, 0);//bottom
-		}
-	}
-	//imshow("mask2",src);
-
 	Mat element = getStructuringElement(0, Size(2 * erodeTimes + 1, 2 * erodeTimes + 1), Point(erodeTimes, erodeTimes));
 	erode(src, erodeBinary, element);
-
 	//imshow("erode",erodeBinary);
+	
+
+	image2D = cv::imread("D:/661model.jpg", 0);
+	image3D = cv::imread(path_3D, 0);
+	findModel(image2D, path_2Dapple, matchLocation_2Dapple, 0.1);
+	findModel(image3D, path_3Dapple, matchLocation_3Dapple, 0.1);
+	fx = 1.5;
+	fy = 1.5;
+	resize(image2D, image2D, Size(image2D.cols / fx, image2D.rows / fy), 0, 0, INTER_LINEAR);
+	matchLocation_2Dapple[0].x /= fx;
+	matchLocation_2Dapple[0].y /= fy;
+	matchLocation_2Dapple[1].x /= fx;
+	matchLocation_2Dapple[1].y /= fy;
+	double x2D = matchLocation_2Dapple[0].x;
+	double y2D = matchLocation_2Dapple[0].y;
+	/*image2D = 255 - image2D;
+	rectangle(image2D, matchLocation_2Dapple[0], matchLocation_2Dapple[1], Scalar(0, 0, 255), 2, 8, 0);
+	rectangle(image3D, matchLocation_3Dapple[0], matchLocation_3Dapple[1], Scalar(0, 0, 255), 2, 8, 0);
+	cv::imshow("image2D", image2D);
+	cv::imshow("image3D", image3D);*/
+	double x3D = matchLocation_3Dapple[0].x;
+	double y3D = matchLocation_3Dapple[0].y;
+	double tempx;
+	double tempy;
+	/*image2D = 255 - image2D;*/
+	//cv::imshow("image2D2", image2D);
+	//waitKey();
+	for (int i = 0; i<image2D.rows; i++)
+	{
+		for (int j = 0; j<image2D.cols; j++)
+		{
+			if (image2D.at<uchar>(i, j) == 255)
+				 tempx = i - x2D + x3D;
+			     tempy = j - y2D + y3D;
+				erodeBinary.at<uchar>(tempx, tempy) = 0;
+		}
+	}
+
+
+	/*cout << "matchLocation_2Dapple[0]: " <<matchLocation_2Dapple[0].x << endl;*/
+	/*findModel(image2D, path_2Drecycle, matchLocation_recycle, 0.3);
+	findModel(image2D, path_2Derror, matchLocation_error, 0.3);*/
+
 }
 
 //	inv       0:pos,1:neg,2:no
@@ -324,8 +253,6 @@ int detect3d::prejudge(cv::Mat depthImage)
 	Mat pic, pic_inv;
 	int type=0;//0:big battery,1:small battery
 
-	mathch2Dsilk();
-	
 	depthImage.copyTo(pic);
 	flip(pic, pic_inv, -1);
 
@@ -472,36 +399,37 @@ int detect3d::prejudge(cv::Mat depthImage)
 
 void detect3d::mathch2Dsilk()
 {
-	cv::Mat image2D,grad_x, abs_grad_x;
+	cv::Mat image2D, image3D;
 	double fx, fy;
-	Point* matchLocation_recycle;
-	Point* matchLocation_apple;
-	Point* matchLocation_error;
+	Point matchLocation_2Drecycle[2];
+	Point matchLocation_2Dapple[2];
+	Point matchLocation_2Derror[2];
+	Point matchLocation_3Drecycle[2];
+	Point matchLocation_3Dapple[2];
+	Point matchLocation_3Derror[2];
 	string path_2D = "D:/661model.jpg";
-	string path_recycle = "D:/model/model_recycle.png";
-	string path_error = "D:/model/model_error.png";
-	string path_apple = "D:/model/model_apple.png";
+	string path_3D = "D:/Data/3D/0001_Hor.jpg";
+	string path_3Drecycle = "D:/model/model_recycle.png";
+	string path_3Derror = "D:/model/model_error.png";
+	string path_3Dapple = "D:/model/model_apple.png";
+	string path_2Drecycle = "D:/model/model_2Drecycle.png";
+	/*string path_2Derror = "D:/model/model_2Derror.png";*/
+	string path_2Dapple = "D:/model/model_2Dapple.png";
 
-	cv::Mat depthImage = cv::imread("D:/661model.jpg",0);
-	depthImage.copyTo(image2D);
-	cv::imshow("temp",depthImage);
-	waitKey();
-	//flip(image2D, image2D, 0);
-	fx = 1.4;
+	image2D = cv::imread("D:/661model.jpg",0);
+	image3D = cv::imread(path_3D, 0);
+	/*fx = 1.4;
 	fy = 1.4;
-	resize(image2D, image2D, Size(image2D.cols / fx, image2D.rows / fy), 0, 0, INTER_LINEAR);
-	cv::Mat apple = cv::imread(path_apple,0);
-	cv::imshow("apple",apple);
-	/*Sobel(apple, grad_x, CV_16S, 0, 1, 3, 1, 1, BORDER_DEFAULT);
-	convertScaleAbs(grad_x, abs_grad_x);*/
-	/*Canny(apple, abs_grad_x, 3, 110, 3);
-	cv::imshow("Sobel_x", abs_grad_x);*/
-	/*threshold(apple, apple, 90, 255, THRESH_BINARY);
-	cv::imwrite("D:/model/model_applechange.png", apple);
-	cv::imshow("apple2", apple);*/
-	cv::waitKey();
-	findModel(image2D, path_apple, matchLocation_apple, 0.1);
-	//cout << "matchLocation_apple[0]: " <<matchLocation_apple[0].x << endl;
-	findModel(image2D, path_recycle, matchLocation_recycle, 0.2);
-	findModel(image2D, path_error, matchLocation_error, 0.2);
+	resize(image2D, image2D, Size(image2D.cols / fx, image2D.rows / fy), 0, 0, INTER_LINEAR);*/
+	findModel(image2D, path_2Dapple, matchLocation_2Dapple, 0.1);
+	findModel(image3D, path_3Dapple, matchLocation_3Dapple, 0.1);
+	image2D = 255 - image2D;
+	rectangle(image2D, matchLocation_2Dapple[0], matchLocation_2Dapple[1], Scalar(0, 0, 255), 2, 8, 0);
+	rectangle(image3D, matchLocation_3Dapple[0], matchLocation_3Dapple[1], Scalar(0, 0, 255), 2, 8, 0);
+	/*cv::imshow("image2D", image2D);
+	cv::imshow("image3D", image3D);*/
+	/*waitKey();*/
+	/*cout << "matchLocation_2Dapple[0]: " <<matchLocation_2Dapple[0].x << endl;*/
+	/*findModel(image2D, path_2Drecycle, matchLocation_recycle, 0.3);
+	findModel(image2D, path_2Derror, matchLocation_error, 0.3);*/
 }
