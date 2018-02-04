@@ -219,6 +219,8 @@ int main(int argc, char* argv[])
 			if (i == 1)
 			{
 				imgdepthHor = cv::imread("cache.jpg");
+				transpose(imgdepthHor, imgdepthHor);
+				flip(imgdepthHor, imgdepthHor, 1);
 			}
 		}
 		cv::imwrite(strPath3DVert, imgdepthVert);

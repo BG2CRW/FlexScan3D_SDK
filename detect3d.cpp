@@ -477,14 +477,16 @@ void detect3d::mathch2Dsilk()
 	Point* matchLocation_recycle;
 	Point* matchLocation_apple;
 	Point* matchLocation_error;
-	string path_2D = "D:/666final.jpg";
+	string path_2D = "D:/661model.jpg";
 	string path_recycle = "D:/model/model_recycle.png";
 	string path_error = "D:/model/model_error.png";
 	string path_apple = "D:/model/model_apple.png";
 
-	cv::Mat depthImage = cv::imread(path_2D,0);
+	cv::Mat depthImage = cv::imread("D:/661model.jpg",0);
 	depthImage.copyTo(image2D);
-	flip(image2D, image2D, 0);
+	cv::imshow("temp",depthImage);
+	waitKey();
+	//flip(image2D, image2D, 0);
 	fx = 1.4;
 	fy = 1.4;
 	resize(image2D, image2D, Size(image2D.cols / fx, image2D.rows / fy), 0, 0, INTER_LINEAR);

@@ -434,5 +434,7 @@ cv::Mat shadow::showDepthImage(pcl::PointCloud<pcl::PointXYZ> cloud, float cutHe
 	fitcolor(src, 0.5 - mean);
 
 	src.convertTo(temp, CV_8U,255.0);
+	flip(temp, temp, 0);
+	flip(temp, temp, -1);
 	return temp;
 }
