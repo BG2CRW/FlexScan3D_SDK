@@ -80,11 +80,14 @@ void detect3d::makeMask(cv::Mat depthImage,cv::Mat erodeBinary, cv::Mat silk2D,i
 	Point matchLocation_3Drecycle[2];
 	Point matchLocation_3Dapple[2];
 	Point matchLocation_3Derror[2];
-	string path_3Drecycle = "D:/model/model_recycle.png";
-	string path_3Derror = "D:/model/model_error.png";
-	string path_3Dapple = "D:/model/model_apple.png";
-	string path_2Drecycle = "D:/model/model_2Drecycle.png";
-	string path_2Derror = "D:/model/model_2Derror.png";
+	//string path_3Drecycle1 = "D:/model/model_recycle1.png";
+	//string path_3Drecycle2 = "D:/model/model_recycle2.png";
+	string path_3Derror1 = "D:/model/model_error1.png";
+	string path_3Derror2 = "D:/model/model_error2.png";
+	string path_3Dapple1 = "D:/model/model_apple1.png";
+	string path_3Dapple2 = "D:/model/model_apple2.png";
+	//string path_2Drecycle = "D:/model/model_2Drecycle.png";
+	string path_2Derror = "D:/model/model_2Derror.jpg";
 	string path_2Dapple = "D:/model/model_2Dapple.png";
 	depthImage.copyTo(src);
 
@@ -104,7 +107,21 @@ void detect3d::makeMask(cv::Mat depthImage,cv::Mat erodeBinary, cv::Mat silk2D,i
 	cv::imshow("1", image3D);
 	waitKey();
 	findModel(image2D, path_2Dapple, matchLocation_2Dapple, 0.4);
-	findModel(image3D, path_3Dapple, matchLocation_3Dapple, 0.4);
+	findModel(image3D, path_3Dapple1, matchLocation_3Dapple, 0.8);
+	if (matchLocation_3Dapple[0].x == 0)
+	{
+		findModel(image3D, path_3Dapple2, matchLocation_3Dapple, 0.8);
+		if (matchLocation_3Dapple[0].x == 0)
+		{
+			cout << "matchLocation: " << matchLocation_3Dapple[0].x << endl;
+			findModel(image2D, path_2Derror, matchLocation_2Dapple, 0.4);
+			findModel(image3D, path_3Derror1, matchLocation_3Dapple, 0.8);
+			if (matchLocation_3Dapple[0].x == 0)
+			{
+				findModel(image3D, path_3Derror2, matchLocation_3Dapple, 0.8);
+			}
+		}
+	}
 	resize(image2D, image2D, Size(image2D.cols / scale, image2D.rows / scale), 0, 0, INTER_LINEAR);
 	matchLocation_2Dapple[0].x /= scale;
 	matchLocation_2Dapple[0].y /= scale;
@@ -322,7 +339,7 @@ int detect3d::errorReport(cv::Mat imgdepthVert, cv::Mat imgdepthHor, cv::Mat sil
 	int report;
 	report = Flatulence.flatulenceCheck(imgdepthVert, 127, 2.3, 240, 35);
 	report = Flatulence.flatulenceCheck(imgdepthHor, 127, 2.3, 240, 35);
-	//check3d(imgdepthVert, silk2D);
+	check3d(imgdepthVert, silk2D);
 	check3d(imgdepthHor, silk2D);
 	return report;
 }
