@@ -8,7 +8,6 @@
 #include <iostream>  
 #include <boost/timer.hpp>
 #include "opencv2/opencv.hpp"
-#include "flatulence.hpp"
 #include <string>
 // Include files to use the PYLON API.
 #include "pylon\PylonIncludes.h"
@@ -21,7 +20,6 @@ using namespace cv;
 static const uint32_t c_countOfImagesToGrab = 1;
 class detect2d Detect2d;
 class detect3d Detect3d;
-class flatulence Flatulence;
 cv::Mat imgdepthVert;
 cv::Mat imgdepthHor;
 cv::Mat imageBasler;
@@ -230,7 +228,7 @@ int main(int argc, char* argv[])
 #ifdef READ
 		cv::Mat imgdepthVert = cv::imread(strPath3DVert, 0);
 		cv::Mat imgdepthHor = cv::imread(strPath3DHor, 0);
-		Detect3d.check3d(imgdepthVert, imgdepthHor, silk2D);
+		int error3D = Detect3d.errorReport(imgdepthVert, imgdepthHor, silkModel2d);
 #endif
 	}
 	return 0;

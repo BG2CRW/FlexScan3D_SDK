@@ -101,6 +101,8 @@ void detect3d::makeMask(cv::Mat depthImage,cv::Mat erodeBinary, cv::Mat silk2D,i
 	//imshow("erode",erodeBinary);
 	silk2D.copyTo(image2D);
 	depthImage.copyTo(image3D);
+	cv::imshow("1", image3D);
+	waitKey();
 	findModel(image2D, path_2Dapple, matchLocation_2Dapple, 0.1);
 	findModel(image3D, path_3Dapple, matchLocation_3Dapple, 0.1);
 	resize(image2D, image2D, Size(image2D.cols / scale, image2D.rows / scale), 0, 0, INTER_LINEAR);
@@ -110,8 +112,8 @@ void detect3d::makeMask(cv::Mat depthImage,cv::Mat erodeBinary, cv::Mat silk2D,i
 	matchLocation_2Dapple[1].y /= scale;
     x2D = matchLocation_2Dapple[0].x;
 	y2D = matchLocation_2Dapple[0].y;
-	/*rectangle(image3D, matchLocation_3Dapple[0], matchLocation_3Dapple[1], Scalar(0, 0, 255), 2, 8, 0);
-	rectangle(erodeBinary, matchLocation_3Dapple[0], matchLocation_3Dapple[1], Scalar(0, 0, 255), 2, 8, 0);*/
+	rectangle(image3D, matchLocation_3Dapple[0], matchLocation_3Dapple[1], Scalar(0, 0, 255), 2, 8, 0);
+	rectangle(src, matchLocation_3Dapple[0], matchLocation_3Dapple[1], Scalar(0, 0, 255), 2, 8, 0);
 	/*rectangle(erodeBinary, matchLocation_2Dapple[0], matchLocation_2Dapple[1], Scalar(0, 0, 255), 2, 8, 0);*/
 	/*image2D = 255 - image2D;
 	rectangle(image2D, matchLocation_2Dapple[0], matchLocation_2Dapple[1], Scalar(0, 0, 255), 2, 8, 0);
@@ -121,8 +123,8 @@ void detect3d::makeMask(cv::Mat depthImage,cv::Mat erodeBinary, cv::Mat silk2D,i
 	x3D = matchLocation_3Dapple[0].x;
 	y3D = matchLocation_3Dapple[0].y;
 	//image2D = 255 - image2D;
-	/*cv::imshow("image2D2", image2D);
-	waitKey();*/
+	cv::imshow("image2D2", src);
+	waitKey();
 	for (int i = 0; i<src.rows; i++)
 	{
 		for (int j = 0; j<src.cols; j++)
@@ -197,7 +199,7 @@ int detect3d::check3d(cv::Mat depthImage,cv::Mat silk2D)
 	depthImage.copyTo(pic);
 	Mat filterImage, canny, erodeImg, maskErode, blackMask,grad_x,grad_y,abs_grad_x,abs_grad_y,dst,lapalace,abs_lapalace,canny1;
 	depthImage.copyTo(blackMask);
-	makeMask(depthImage, blackMask, 5, 5);
+	makeMask(depthImage, blackMask, silk2D, 5, 5);
 	imshow("blackMask",blackMask);
 
 	Sobel(depthImage, grad_x, CV_16S, 0, 1, 3, 1, 1, BORDER_DEFAULT);
@@ -320,6 +322,6 @@ int detect3d::errorReport(cv::Mat imgdepthVert, cv::Mat imgdepthHor, cv::Mat sil
 	report = Flatulence.flatulenceCheck(imgdepthVert, 127, 2.3, 240, 35);
 	report = Flatulence.flatulenceCheck(imgdepthHor, 127, 2.3, 240, 35);
 	check3d(imgdepthVert, silk2D);
-	check3d(imgdepthHor, silk2D);
+	//check3d(imgdepthHor, silk2D);
 	return report;
 }
