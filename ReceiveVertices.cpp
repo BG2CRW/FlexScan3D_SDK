@@ -30,7 +30,7 @@ char path2D_prefix[] = "D:/Data/2D/";
 char path_suffix[] = ".jpg";
 char path_3DHor_suffix[] = "_Hor.jpg";
 char path_3DVert_suffix[] = "_Vert.jpg";
-int counter = 0;
+int counter = 20;
 int main(int argc, char* argv[])
 {
 	
@@ -99,7 +99,10 @@ int main(int argc, char* argv[])
 #endif
 #ifdef READ
 		cv::Mat img = cv::imread(strPath2D,0);
-		int errorReport = Detect2d.scratchCheck(img);
+		cv::Mat silkModel2d;
+		int errorReport = Detect2d.scratchCheck(img, silkModel2d);
+		//imwrite("D:/silkModel2d.jpg", silkModel2d);
+		//imshow("silkModel2d", silkModel2d);
 #endif
 
 

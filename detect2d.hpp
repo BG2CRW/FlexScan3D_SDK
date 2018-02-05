@@ -36,6 +36,6 @@ public:
 	int surfaceIndex;//1 for English face, 2 for Chinese face
 
 	int batteryKind;
-	int scratchCheck(cv::Mat image);
+	int scratchCheck(cv::Mat image, cv::Mat& silkModel2d);
 };
 #endif

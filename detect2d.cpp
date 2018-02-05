@@ -9,7 +9,7 @@ void onChangeTrackBarCanny(int pos, void* data);
 
 cv::Mat imageTemp;
 
-int detect2d::scratchCheck(cv::Mat image)
+int detect2d::scratchCheck(cv::Mat image, cv::Mat& silkModel2d)
 {
 	//cvtColor(image, image, CV_RGB2GRAY, 0);
 	batteryKind = 2;
@@ -66,6 +66,7 @@ int detect2d::scratchCheck(cv::Mat image)
 	imwrite("D:/661model0.jpg", imageTemp);
 	imshow("adpModel", adpModel);
 	imwrite("D:/661model.jpg", adpModel);
+	adpModel.copyTo(silkModel2d);
 	waitKey();
 
 	//Prehandle of the image
@@ -160,12 +161,12 @@ cv::Mat detect2d::edgeMake(cv::Mat origin)
 	Mat element039 = getStructuringElement(MORPH_RECT, Size(39, 39));
 	erode(edgeMask, innerEdge, element039);
 	bitwise_not(innerEdge, innerEdge);
-	imshow("annular mask", innerEdge);
+	//imshow("annular mask", innerEdge);
 
 	//3.获取环形边缘区域
 	bitwise_and(origin, innerEdge, origin);
 	bitwise_and(origin, edgeMask, origin);
-	imshow("Annular Edge", origin);
+	//imshow("Annular Edge", origin);
 
 	//4.反转模版
 	bitwise_not(innerEdge, innerEdge);
@@ -237,7 +238,7 @@ cv::Mat detect2d::silkMask(cv::Mat inputImage, cv::Mat edgeMask, cv::Mat adpROI)
 	//adaptiveThreshold(img, binary, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY_INV, 1000 * 2 + 1, 8);
 	//1.2.Set the ROI
 	bitwise_and(binary, edgeMask, binary);
-	imshow("Binary", binary);
+	//imshow("Binary", binary);
 
 	//2.膨胀和腐蚀
 	Mat dilate1, erode1, dilate2, erode2, dilate3;
@@ -406,7 +407,7 @@ int detect2d::liquidDetect(cv::Mat origin, cv::Mat inputImage)
 	Mat element44 = getStructuringElement(MORPH_RECT, Size(10, 10));
 	erode(inputImage, inputImage, element33);
 	dilate(inputImage, inputImage, element44);
-	imshow("liquid0", inputImage);
+	//imshow("liquid0", inputImage);
 
 	//Find the damages
 	vector<vector<Point>> contours;//定义轮廓
@@ -448,7 +449,7 @@ int detect2d::liquidDetect(cv::Mat origin, cv::Mat inputImage)
 		resultID = 2;
 	cout << "There are " << liquidNum << " liquid defects." << endl;
 	imshow("liquid", origin);
-	imwrite("F:/liquidResult.jpg", origin);
+	//imwrite("F:/liquidResult.jpg", origin);
 
 	return resultID;
 }
@@ -459,8 +460,8 @@ int detect2d::alDetect(cv::Mat origin, cv::Mat inputImage)
 	Mat elementAl = getStructuringElement(MORPH_RECT, Size(3, 3));
 	erode(inputImage, inputImage, elementAl);
 	//dilate(InputImage, InputImage, elementAl);
-	imshow("Al0", inputImage);
-	imwrite("F:/Al.jpg", inputImage);
+	//imshow("Al0", inputImage);
+	//imwrite("F:/Al.jpg", inputImage);
 
 	vector<vector<Point>> contours;//定义轮廓
 	vector<vector<Point>> contoursfinal;
@@ -495,7 +496,7 @@ int detect2d::alDetect(cv::Mat origin, cv::Mat inputImage)
 		drawContours(origin, contoursfinal, i, Scalar(0), FILLED, 8, hierarchy, 0, Point());
 	}
 	imshow("Al", origin);
-	imwrite("F:/AlResult.jpg", origin);
+	//imwrite("F:/AlResult.jpg", origin);
 
 	if (contoursfinal.size() > 0)
 		resultID = 2;
@@ -535,7 +536,7 @@ int detect2d::scratchDetect(cv::Mat origin, cv::Mat inputImage)
 	//imshow("scratch00", inputImage);
 	erode(inputImage, inputImage, element55);
 	//imshow("scratch0", inputImage);
-	imwrite("F://Scratch.jpg", inputImage);
+	//imwrite("F://Scratch.jpg", inputImage);
 
 	//Find the damages
 	vector<vector<Point>> contours;//定义轮廓
@@ -570,7 +571,7 @@ int detect2d::scratchDetect(cv::Mat origin, cv::Mat inputImage)
 		drawContours(origin, contoursvalue, i, Scalar(0), FILLED, 8, hierarchy, 0, Point());
 	}
 	imshow("scratch", origin);
-	imwrite("F:/scratchResult.jpg", origin);
+	//imwrite("F:/scratchResult.jpg", origin);
 
 	//计算实际长度,判断长中短划痕数量
 	double scale = 1600.0/116.5;
