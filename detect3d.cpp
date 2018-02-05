@@ -57,6 +57,7 @@ void detect3d::findModel(cv::Mat depthImage,string path,Point* matchLocation,flo
 	if( g_nMatchMethod  == CV_TM_CCORR || g_nMatchMethod == CV_TM_CCORR_NORMED|| \
 		 g_nMatchMethod == CV_TM_CCOEFF|| g_nMatchMethod == CV_TM_CCOEFF_NORMED) 
 	{   
+		cout << "maxvalue: " << maxValue << endl;
 		if(maxValue>threshold)
 			rectangle( g_srcImage, matchLocation[0],matchLocation[1],Scalar(0,0,255), 2, 8, 0 );  
 		else
@@ -70,6 +71,8 @@ void detect3d::findModel(cv::Mat depthImage,string path,Point* matchLocation,flo
 
 void detect3d::makeMask(cv::Mat depthImage,cv::Mat erodeBinary, cv::Mat silk2D,int threshold,int erodeTimes)
 {
+	int flag = 0;
+	int face;
 	cv::Mat src;
 	cv::Mat image2D, image3D;
 	double scale, tempx, tempy, x2D,  y2D, x3D, y3D;
@@ -82,12 +85,12 @@ void detect3d::makeMask(cv::Mat depthImage,cv::Mat erodeBinary, cv::Mat silk2D,i
 	Point matchLocation_3Derror[2];
 	//string path_3Drecycle1 = "D:/model/model_recycle1.png";
 	//string path_3Drecycle2 = "D:/model/model_recycle2.png";
-	string path_3Derror1 = "D:/model/model_error1.png";
-	string path_3Derror2 = "D:/model/model_error2.png";
+	string path_3Derror1 = "D:/model/model_error1.jpg";
+	string path_3Derror2 = "D:/model/model_error2.jpg";
 	string path_3Dapple1 = "D:/model/model_apple1.png";
 	string path_3Dapple2 = "D:/model/model_apple2.png";
 	//string path_2Drecycle = "D:/model/model_2Drecycle.png";
-	string path_2Derror = "D:/model/model_2Derror.jpg";
+	string path_2Derror = "D:/model/model_2Drerror.jpg";
 	string path_2Dapple = "D:/model/model_2Dapple.png";
 	depthImage.copyTo(src);
 
@@ -106,28 +109,52 @@ void detect3d::makeMask(cv::Mat depthImage,cv::Mat erodeBinary, cv::Mat silk2D,i
 	depthImage.copyTo(image3D);
 	cv::imshow("1", image3D);
 	waitKey();
-	findModel(image2D, path_2Dapple, matchLocation_2Dapple, 0.4);
-	findModel(image3D, path_3Dapple1, matchLocation_3Dapple, 0.8);
-	if (matchLocation_3Dapple[0].x == 0)
+	findModel(image2D, path_2Dapple, matchLocation_2Dapple, 0.9);
+	if (matchLocation_2Dapple[0].x != 0)
 	{
+		cout << "Apple face" << endl;
+		face = 0;
+		flag = findlogo(image3D, face, matchLocation_3Dapple);
+	}
+	else
+	{
+		findModel(image2D, path_2Derror, matchLocation_2Dapple, 0.9);
+		cout << "Error face" << endl;
+		face = 1;
+		flag = findlogo(image3D, face, matchLocation_3Dapple);
+	}
+
+	/*findModel(image2D, path_2Dapple, matchLocation_2Dapple, 0.4);
+	findModel(image3D, path_3Dapple1, matchLocation_3Dapple, 0.8);*/
+	/*if (matchLocation_3Dapple[0].x == 0)
+	{
+		cout << "matchLocation1: " << matchLocation_3Dapple[0].x << endl;
 		findModel(image3D, path_3Dapple2, matchLocation_3Dapple, 0.8);
 		if (matchLocation_3Dapple[0].x == 0)
 		{
-			cout << "matchLocation: " << matchLocation_3Dapple[0].x << endl;
-			findModel(image2D, path_2Derror, matchLocation_2Dapple, 0.4);
-			findModel(image3D, path_3Derror1, matchLocation_3Dapple, 0.8);
+			cout << "matchLocation2: " << matchLocation_3Dapple[0].x << endl;
+			findModel(image3D, path_3Derror2, matchLocation_3Dapple, 0.4);
+			findModel(image2D, path_2Derror, matchLocation_2Dapple, 0.8);
+			cout << "matchLocation2.2: " << matchLocation_3Dapple[0].x << endl;
 			if (matchLocation_3Dapple[0].x == 0)
 			{
-				findModel(image3D, path_3Derror2, matchLocation_3Dapple, 0.8);
+				cout << "matchLocation3: " << matchLocation_3Dapple[0].x << endl;
+				findModel(image3D, path_3Derror1, matchLocation_3Dapple, 0.4);
+				if (matchLocation_3Dapple[0].x == 0)
+				{
+					flag = 1;
+				}
 			}
 		}
-	}
+	}*/
 	resize(image2D, image2D, Size(image2D.cols / scale, image2D.rows / scale), 0, 0, INTER_LINEAR);
 	matchLocation_2Dapple[0].x /= scale;
 	matchLocation_2Dapple[0].y /= scale;
 	matchLocation_2Dapple[1].x /= scale;
 	matchLocation_2Dapple[1].y /= scale;
-    x2D = matchLocation_2Dapple[0].x;
+	if (flag != 1)
+	{
+	x2D = matchLocation_2Dapple[0].x;
 	y2D = matchLocation_2Dapple[0].y;
 	rectangle(image2D, matchLocation_2Dapple[0], matchLocation_2Dapple[1], Scalar(255, 255, 255), 2, 8, 0);
 	rectangle(image3D, matchLocation_3Dapple[0], matchLocation_3Dapple[1], Scalar(0, 0, 255), 2, 8, 0);
@@ -143,14 +170,19 @@ void detect3d::makeMask(cv::Mat depthImage,cv::Mat erodeBinary, cv::Mat silk2D,i
 	cv::imshow("image2D2", image2D);
 	cv::imshow("image3D2", image3D);
 	waitKey();
-	for (int i = 0; i<src.rows; i++)
-	{
-		for (int j = 0; j<src.cols; j++)
+	for (int i = 0; i < src.rows; i++)
 		{
-			tempx = i - y3D + y2D;
-			tempy = j - x3D + x2D;
-			if (image2D.at<uchar>(tempx, tempy) > 50)
-				src.at<uchar>(i, j) = 0;
+			for (int j = 0; j < src.cols; j++)
+			{
+				tempx = i - y3D + y2D;
+				tempy = j - x3D + x2D;
+				if (tempx < 0 ||tempy < 0|| tempx > image2D.rows|| tempy > image2D.cols)
+				{
+					break;
+				}
+				if (image2D.at<uchar>(tempx, tempy) > 50)
+					src.at<uchar>(i, j) = 0;
+			}
 		}
 	}
 	Mat element = getStructuringElement(0, Size(2 * erodeTimes + 1, 2 * erodeTimes + 1), Point(erodeTimes, erodeTimes));
@@ -217,7 +249,7 @@ int detect3d::check3d(cv::Mat depthImage,cv::Mat silk2D)
 	depthImage.copyTo(pic);
 	Mat filterImage, canny, erodeImg, maskErode, blackMask,grad_x,grad_y,abs_grad_x,abs_grad_y,dst,lapalace,abs_lapalace,canny1;
 	depthImage.copyTo(blackMask);
-	makeMask(depthImage, blackMask, silk2D, 5, 5);
+	makeMask(depthImage, blackMask, silk2D, 5, 4);
 	imshow("blackMask",blackMask);
 
 	Sobel(depthImage, grad_x, CV_16S, 0, 1, 3, 1, 1, BORDER_DEFAULT);
@@ -342,4 +374,52 @@ int detect3d::errorReport(cv::Mat imgdepthVert, cv::Mat imgdepthHor, cv::Mat sil
 	check3d(imgdepthVert, silk2D);
 	check3d(imgdepthHor, silk2D);
 	return report;
+}
+
+int detect3d::findlogo(cv::Mat image3D,int face,Point* matchLocation_3Dapple)
+{
+	//string path_3Drecycle1 = "D:/model/model_recycle1.png";
+	//string path_3Drecycle2 = "D:/model/model_recycle2.png";
+	string path_3Derror1 = "D:/model/model_error1.jpg";
+	string path_3Derror2 = "D:/model/model_error2.jpg";
+	string path_3Dapple1 = "D:/model/model_apple1.png";
+	string path_3Dapple2 = "D:/model/model_apple2.png";
+	cout <<"face: " << face << endl;
+	if (face == 0)	//Apple face
+	{
+		findModel(image3D, path_3Dapple1, matchLocation_3Dapple, 0.6);
+		if (matchLocation_3Dapple[0].x != 0)
+		{
+			cout << "in: " << matchLocation_3Dapple[0].x << " " << matchLocation_3Dapple[0].y << endl;
+			return 0;
+		}
+		findModel(image3D, path_3Dapple2, matchLocation_3Dapple, 0.6);
+		if (matchLocation_3Dapple[0].x != 0)
+		{
+			cout << "in: " << matchLocation_3Dapple[0].x << " " << matchLocation_3Dapple[0].y << endl;
+			return 0;
+		}
+		else
+		{
+			return 1;
+		}
+	}
+
+	if (face == 1)   //Error face
+	{
+		findModel(image3D, path_3Derror1, matchLocation_3Dapple, 0.3);
+		if (matchLocation_3Dapple[0].x != 0)
+		{
+			return 0;
+		}
+		findModel(image3D, path_3Derror2, matchLocation_3Dapple, 0.3);
+		if (matchLocation_3Dapple[0].x != 0)
+		{
+			return 0;
+		}
+		else
+		{
+			return 1;
+		}
+	}
 }
