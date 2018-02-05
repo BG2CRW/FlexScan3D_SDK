@@ -103,8 +103,8 @@ void detect3d::makeMask(cv::Mat depthImage,cv::Mat erodeBinary, cv::Mat silk2D,i
 	depthImage.copyTo(image3D);
 	cv::imshow("1", image3D);
 	waitKey();
-	findModel(image2D, path_2Dapple, matchLocation_2Dapple, 0.1);
-	findModel(image3D, path_3Dapple, matchLocation_3Dapple, 0.1);
+	findModel(image2D, path_2Dapple, matchLocation_2Dapple, 0.4);
+	findModel(image3D, path_3Dapple, matchLocation_3Dapple, 0.4);
 	resize(image2D, image2D, Size(image2D.cols / scale, image2D.rows / scale), 0, 0, INTER_LINEAR);
 	matchLocation_2Dapple[0].x /= scale;
 	matchLocation_2Dapple[0].y /= scale;
@@ -112,8 +112,8 @@ void detect3d::makeMask(cv::Mat depthImage,cv::Mat erodeBinary, cv::Mat silk2D,i
 	matchLocation_2Dapple[1].y /= scale;
     x2D = matchLocation_2Dapple[0].x;
 	y2D = matchLocation_2Dapple[0].y;
+	rectangle(image2D, matchLocation_2Dapple[0], matchLocation_2Dapple[1], Scalar(255, 255, 255), 2, 8, 0);
 	rectangle(image3D, matchLocation_3Dapple[0], matchLocation_3Dapple[1], Scalar(0, 0, 255), 2, 8, 0);
-	rectangle(src, matchLocation_3Dapple[0], matchLocation_3Dapple[1], Scalar(0, 0, 255), 2, 8, 0);
 	/*rectangle(erodeBinary, matchLocation_2Dapple[0], matchLocation_2Dapple[1], Scalar(0, 0, 255), 2, 8, 0);*/
 	/*image2D = 255 - image2D;
 	rectangle(image2D, matchLocation_2Dapple[0], matchLocation_2Dapple[1], Scalar(0, 0, 255), 2, 8, 0);
@@ -123,7 +123,8 @@ void detect3d::makeMask(cv::Mat depthImage,cv::Mat erodeBinary, cv::Mat silk2D,i
 	x3D = matchLocation_3Dapple[0].x;
 	y3D = matchLocation_3Dapple[0].y;
 	//image2D = 255 - image2D;
-	cv::imshow("image2D2", src);
+	cv::imshow("image2D2", image2D);
+	cv::imshow("image3D2", image3D);
 	waitKey();
 	for (int i = 0; i<src.rows; i++)
 	{
@@ -321,7 +322,7 @@ int detect3d::errorReport(cv::Mat imgdepthVert, cv::Mat imgdepthHor, cv::Mat sil
 	int report;
 	report = Flatulence.flatulenceCheck(imgdepthVert, 127, 2.3, 240, 35);
 	report = Flatulence.flatulenceCheck(imgdepthHor, 127, 2.3, 240, 35);
-	check3d(imgdepthVert, silk2D);
-	//check3d(imgdepthHor, silk2D);
+	//check3d(imgdepthVert, silk2D);
+	check3d(imgdepthHor, silk2D);
 	return report;
 }
