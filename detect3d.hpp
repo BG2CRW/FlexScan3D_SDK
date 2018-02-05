@@ -9,10 +9,9 @@ using namespace std;
 class detect3d
 {
 public:
-	void makeMask(cv::Mat depthImage,cv::Mat erodeBinary,int threshold,int erodeTimes,int* classify,Point* matchLocation,int type);
-	int prejudge(cv::Mat depthImage);
+	void makeMask(cv::Mat depthImage, cv::Mat erodeBinary, cv::Mat silk2D,int threshold, int erodeTimes);
+	int check3d(cv::Mat depthImage, cv::Mat silk2D);
 	void findModel(cv::Mat depthImage,string path,Point* matchLocation,float threshold);
-	void judgeInv(int* classify,int* inv,int* pos,Mat depthImage,Point* matchLocation);
-	void mathch2Dsilk();
+	int errorReport(cv::Mat imgdepthVert, cv::Mat imgdepthHor, cv::Mat silk2D);
 };
 #endif

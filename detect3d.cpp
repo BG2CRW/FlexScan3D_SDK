@@ -1,7 +1,10 @@
 //预处理：滤波+canny
+#include "flatulence.hpp"
 #include "detect3d.hpp"
 #define DEBUG 1
 #define PI 3.1415926  
+
+class flatulence Flatulence;
 
 using namespace std;
 using namespace cv;
@@ -65,24 +68,23 @@ void detect3d::findModel(cv::Mat depthImage,string path,Point* matchLocation,flo
     //imshow( "result", g_srcImage );   
 }
 
-void detect3d::makeMask(cv::Mat depthImage,cv::Mat erodeBinary,int threshold,int erodeTimes,int* classify,Point* matchLocation,int type)
+void detect3d::makeMask(cv::Mat depthImage,cv::Mat erodeBinary, cv::Mat silk2D,int threshold,int erodeTimes)
 {
 	cv::Mat src;
 	cv::Mat image2D, image3D;
-	double fx, fy, scale;
+	double scale, tempx, tempy, x2D,  y2D, x3D, y3D;
+	scale = 1.35;
 	Point matchLocation_2Drecycle[2];
 	Point matchLocation_2Dapple[2];
 	Point matchLocation_2Derror[2];
 	Point matchLocation_3Drecycle[2];
 	Point matchLocation_3Dapple[2];
 	Point matchLocation_3Derror[2];
-	string path_2D = "D:/661model.jpg";
-	string path_3D = "D:/Data/3D/0001_Hor.jpg";
 	string path_3Drecycle = "D:/model/model_recycle.png";
 	string path_3Derror = "D:/model/model_error.png";
 	string path_3Dapple = "D:/model/model_apple.png";
 	string path_2Drecycle = "D:/model/model_2Drecycle.png";
-	/*string path_2Derror = "D:/model/model_2Derror.png";*/
+	string path_2Derror = "D:/model/model_2Derror.png";
 	string path_2Dapple = "D:/model/model_2Dapple.png";
 	depthImage.copyTo(src);
 
@@ -96,109 +98,48 @@ void detect3d::makeMask(cv::Mat depthImage,cv::Mat erodeBinary,int threshold,int
 				src.at<uchar>(i, j) = 255;
 		}
 	}
-	Mat element = getStructuringElement(0, Size(2 * erodeTimes + 1, 2 * erodeTimes + 1), Point(erodeTimes, erodeTimes));
-	erode(src, erodeBinary, element);
 	//imshow("erode",erodeBinary);
-	
-
-	image2D = cv::imread("D:/661model.jpg", 0);
-	image3D = cv::imread(path_3D, 0);
+	silk2D.copyTo(image2D);
+	depthImage.copyTo(image3D);
 	findModel(image2D, path_2Dapple, matchLocation_2Dapple, 0.1);
 	findModel(image3D, path_3Dapple, matchLocation_3Dapple, 0.1);
-	fx = 1.5;
-	fy = 1.5;
-	resize(image2D, image2D, Size(image2D.cols / fx, image2D.rows / fy), 0, 0, INTER_LINEAR);
-	matchLocation_2Dapple[0].x /= fx;
-	matchLocation_2Dapple[0].y /= fy;
-	matchLocation_2Dapple[1].x /= fx;
-	matchLocation_2Dapple[1].y /= fy;
-	double x2D = matchLocation_2Dapple[0].x;
-	double y2D = matchLocation_2Dapple[0].y;
+	resize(image2D, image2D, Size(image2D.cols / scale, image2D.rows / scale), 0, 0, INTER_LINEAR);
+	matchLocation_2Dapple[0].x /= scale;
+	matchLocation_2Dapple[0].y /= scale;
+	matchLocation_2Dapple[1].x /= scale;
+	matchLocation_2Dapple[1].y /= scale;
+    x2D = matchLocation_2Dapple[0].x;
+	y2D = matchLocation_2Dapple[0].y;
+	/*rectangle(image3D, matchLocation_3Dapple[0], matchLocation_3Dapple[1], Scalar(0, 0, 255), 2, 8, 0);
+	rectangle(erodeBinary, matchLocation_3Dapple[0], matchLocation_3Dapple[1], Scalar(0, 0, 255), 2, 8, 0);*/
+	/*rectangle(erodeBinary, matchLocation_2Dapple[0], matchLocation_2Dapple[1], Scalar(0, 0, 255), 2, 8, 0);*/
 	/*image2D = 255 - image2D;
 	rectangle(image2D, matchLocation_2Dapple[0], matchLocation_2Dapple[1], Scalar(0, 0, 255), 2, 8, 0);
 	rectangle(image3D, matchLocation_3Dapple[0], matchLocation_3Dapple[1], Scalar(0, 0, 255), 2, 8, 0);
-	cv::imshow("image2D", image2D);
-	cv::imshow("image3D", image3D);*/
-	double x3D = matchLocation_3Dapple[0].x;
-	double y3D = matchLocation_3Dapple[0].y;
-	double tempx;
-	double tempy;
-	/*image2D = 255 - image2D;*/
-	//cv::imshow("image2D2", image2D);
-	//waitKey();
-	for (int i = 0; i<image2D.rows; i++)
+	cv::imshow("image2D", image2D);*/
+	/*cv::imshow("image3D", erodeBinary);*/
+	x3D = matchLocation_3Dapple[0].x;
+	y3D = matchLocation_3Dapple[0].y;
+	//image2D = 255 - image2D;
+	/*cv::imshow("image2D2", image2D);
+	waitKey();*/
+	for (int i = 0; i<src.rows; i++)
 	{
-		for (int j = 0; j<image2D.cols; j++)
+		for (int j = 0; j<src.cols; j++)
 		{
-			if (image2D.at<uchar>(i, j) == 255)
-				 tempx = i - x2D + x3D;
-			     tempy = j - y2D + y3D;
-				erodeBinary.at<uchar>(tempx, tempy) = 0;
+			tempx = i - y3D + y2D;
+			tempy = j - x3D + x2D;
+			if (image2D.at<uchar>(tempx, tempy) > 50)
+				src.at<uchar>(i, j) = 0;
 		}
 	}
-
-
+	Mat element = getStructuringElement(0, Size(2 * erodeTimes + 1, 2 * erodeTimes + 1), Point(erodeTimes, erodeTimes));
+	erode(src, erodeBinary, element);
+	/*cv::imshow("erodeBinary", erodeBinary);
+	waitKey();*/
 	/*cout << "matchLocation_2Dapple[0]: " <<matchLocation_2Dapple[0].x << endl;*/
 	/*findModel(image2D, path_2Drecycle, matchLocation_recycle, 0.3);
 	findModel(image2D, path_2Derror, matchLocation_error, 0.3);*/
-
-}
-
-//	inv       0:pos,1:neg,2:no
-//	pos       0:pos,1:neg,2:no
-//	classify  0:recycle,1:error,2:apple,3:no
-
-void detect3d::judgeInv(int *classify,int *inv,int *pos,Mat depthImage,Point* matchLocation)
-{
-	string path_recycle="D:/model/model_recycle.png";
-	string path_error="D:/model/model_error.png";
-	string path_apple="D:/model/model_apple.png";
-
-	Mat pic,pic_inv;
-	depthImage.copyTo(pic);
-
-	inv[0]=0;//0:pos,1:neg,2:no
-	pos[0]=0;//0:pos,1:neg,2:no
-	classify[0]=0;//0:recycle,1:error,2:apple,3:no
-
-	findModel(pic,path_recycle,matchLocation,0.4);
-	if((matchLocation[0].x==0)&&(matchLocation[0].y==0)){
-		findModel(pic,path_error,matchLocation,0.25);
-		if((matchLocation[0].x==0)&&(matchLocation[0].y==0)){
-			flip(pic,pic_inv,-1);
-			findModel(pic_inv,path_recycle,matchLocation,0.4);
-			if((matchLocation[0].x==0)&&(matchLocation[0].y==0)){
-				findModel(pic_inv,path_error,matchLocation,0.25);
-				if((matchLocation[0].x==0)&&(matchLocation[0].y==0)){
-					findModel(pic,path_apple,matchLocation,0.5);
-					if((matchLocation[0].x==0)&&(matchLocation[0].y==0)){
-						findModel(pic_inv,path_apple,matchLocation,0.5);
-						if((matchLocation[0].x==0)&&(matchLocation[0].y==0)){
-							inv[0]=2;pos[0]=2;classify[0]=3;
-						}
-						else{
-							inv[0]=1;pos[0]=0;classify[0]=2;
-						}
-					}
-					else{
-						inv[0]=0;pos[0]=0;classify[0]=2;
-					}
-				}
-				else{
-					inv[0]=1;pos[0]=1;classify[0]=1;
-				}
-			}
-			else{
-				inv[0]=1;pos[0]=0;classify[0]=0;
-			}
-		}
-		else{
-			inv[0]=0;pos[0]=1;classify[0]=1;
-		}
-	}
-	else{
-		inv[0]=0;pos[0]=0;classify[0]=0;
-	}
 }
 
 void ConnectEdge(Mat src)
@@ -242,7 +183,7 @@ void ConnectEdge(Mat src)
 	}
 }
 
-int detect3d::prejudge(cv::Mat depthImage)
+int detect3d::check3d(cv::Mat depthImage,cv::Mat silk2D)
 {
 
 	int id = 0;
@@ -254,33 +195,9 @@ int detect3d::prejudge(cv::Mat depthImage)
 	int type=0;//0:big battery,1:small battery
 
 	depthImage.copyTo(pic);
-	flip(pic, pic_inv, -1);
-
-	judgeInv(classify, inv, pos, depthImage, matchLocation);
-	cout << classify[0] << " " << inv[0] << " " << pos[0] << " " << matchLocation[0].x << " " << matchLocation[0].y << " " << matchLocation[1].x << " " << matchLocation[1].y << endl;
-
-	if (inv[0] == 0)
-	{
-		rectangle(pic, matchLocation[0], matchLocation[1], Scalar(0, 0, 255), 2, 8, 0);
-		imshow("rect",pic);
-	}
-
-	if (inv[0] == 1)
-	{
-		pic_inv.copyTo(depthImage);
-		rectangle(pic_inv, matchLocation[0], matchLocation[1], Scalar(0, 0, 255), 2, 8, 0);
-		imshow("rect",pic_inv);
-	}
-	imshow("src", depthImage);
-	cout<<"height:" <<depthImage.rows<<endl;
-	if (depthImage.rows > 950)
-		type = 0;
-	else
-		type = 1;
-
 	Mat filterImage, canny, erodeImg, maskErode, blackMask,grad_x,grad_y,abs_grad_x,abs_grad_y,dst,lapalace,abs_lapalace,canny1;
 	depthImage.copyTo(blackMask);
-	makeMask(depthImage, blackMask, 5, 5, classify, matchLocation,type);
+	makeMask(depthImage, blackMask, 5, 5);
 	imshow("blackMask",blackMask);
 
 	Sobel(depthImage, grad_x, CV_16S, 0, 1, 3, 1, 1, BORDER_DEFAULT);
@@ -397,39 +314,12 @@ int detect3d::prejudge(cv::Mat depthImage)
 	return j;
 }
 
-void detect3d::mathch2Dsilk()
+int detect3d::errorReport(cv::Mat imgdepthVert, cv::Mat imgdepthHor, cv::Mat silk2D)
 {
-	cv::Mat image2D, image3D;
-	double fx, fy;
-	Point matchLocation_2Drecycle[2];
-	Point matchLocation_2Dapple[2];
-	Point matchLocation_2Derror[2];
-	Point matchLocation_3Drecycle[2];
-	Point matchLocation_3Dapple[2];
-	Point matchLocation_3Derror[2];
-	string path_2D = "D:/661model.jpg";
-	string path_3D = "D:/Data/3D/0001_Hor.jpg";
-	string path_3Drecycle = "D:/model/model_recycle.png";
-	string path_3Derror = "D:/model/model_error.png";
-	string path_3Dapple = "D:/model/model_apple.png";
-	string path_2Drecycle = "D:/model/model_2Drecycle.png";
-	/*string path_2Derror = "D:/model/model_2Derror.png";*/
-	string path_2Dapple = "D:/model/model_2Dapple.png";
-
-	image2D = cv::imread("D:/661model.jpg",0);
-	image3D = cv::imread(path_3D, 0);
-	/*fx = 1.4;
-	fy = 1.4;
-	resize(image2D, image2D, Size(image2D.cols / fx, image2D.rows / fy), 0, 0, INTER_LINEAR);*/
-	findModel(image2D, path_2Dapple, matchLocation_2Dapple, 0.1);
-	findModel(image3D, path_3Dapple, matchLocation_3Dapple, 0.1);
-	image2D = 255 - image2D;
-	rectangle(image2D, matchLocation_2Dapple[0], matchLocation_2Dapple[1], Scalar(0, 0, 255), 2, 8, 0);
-	rectangle(image3D, matchLocation_3Dapple[0], matchLocation_3Dapple[1], Scalar(0, 0, 255), 2, 8, 0);
-	/*cv::imshow("image2D", image2D);
-	cv::imshow("image3D", image3D);*/
-	/*waitKey();*/
-	/*cout << "matchLocation_2Dapple[0]: " <<matchLocation_2Dapple[0].x << endl;*/
-	/*findModel(image2D, path_2Drecycle, matchLocation_recycle, 0.3);
-	findModel(image2D, path_2Derror, matchLocation_error, 0.3);*/
+	int report;
+	report = Flatulence.flatulenceCheck(imgdepthVert, 127, 2.3, 240, 35);
+	report = Flatulence.flatulenceCheck(imgdepthHor, 127, 2.3, 240, 35);
+	check3d(imgdepthVert, silk2D);
+	check3d(imgdepthHor, silk2D);
+	return report;
 }
