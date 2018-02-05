@@ -100,7 +100,10 @@ int main(int argc, char* argv[])
 #endif
 #ifdef READ
 		cv::Mat img = cv::imread(strPath2D,0);
-		errorReport = Detect2d.scratchCheck(img);
+		cv::Mat silkModel2d;
+		int errorReport = Detect2d.scratchCheck(img, silkModel2d);
+		//imwrite("D:/silkModel2d.jpg", silkModel2d);
+		//imshow("silkModel2d", silkModel2d);
 #endif
 
 #ifdef GRAB

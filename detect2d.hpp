@@ -20,14 +20,15 @@ private:
 	int minRow, maxRow, minCol, maxCol;
 	
 	cv::Mat preProcess(cv::Mat inputImage);
-	cv::Mat silkMask(cv::Mat inputImage, cv::Mat adpROI);
+	cv::Mat silkMask(cv::Mat inputImage,cv::Mat edgeMask, cv::Mat adpROI);
 	void edgeCut(cv::Mat inputImage);
+	cv::Mat edgeMake(cv::Mat origin);
 	
 	void showDefect(cv::Mat finalShow, cv::Mat inputImage);
 
+	int blackDetect(cv::Mat inputImage, cv::Mat edgeMask);
 	int alDetect(cv::Mat origin, cv::Mat inputImage);
 	int scratchDetect(cv::Mat origin, cv::Mat inputImage);
-	int blackDetect(cv::Mat inputImage);
 	int liquidDetect(cv::Mat origin, cv::Mat inputImage);
 
 public:
@@ -35,6 +36,6 @@ public:
 	int surfaceIndex;//1 for English face, 2 for Chinese face
 
 	int batteryKind;
-	int scratchCheck(cv::Mat image);
+	int scratchCheck(cv::Mat image, cv::Mat& silkModel2d);
 };
 #endif
