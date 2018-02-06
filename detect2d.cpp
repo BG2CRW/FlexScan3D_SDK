@@ -231,7 +231,7 @@ cv::Mat detect2d::silkMask(cv::Mat inputImage, cv::Mat edgeMask, cv::Mat adpROI)
 	//1.��ֵ��
 	surfaceIndex = 1;
 	Mat binary;
-	threshold(inputImage, binary, 100, 255, THRESH_BINARY);
+	threshold(inputImage, binary, 240, 255, THRESH_BINARY);
 	//adaptiveThreshold(img, binary, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY_INV, 1000 * 2 + 1, 8);
 	//1.2.Set the ROI
 	bitwise_and(binary, edgeMask, binary);

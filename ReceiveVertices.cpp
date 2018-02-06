@@ -28,7 +28,7 @@ char path2D_prefix[] = "D:/Data/2D/";
 char path_suffix[] = ".jpg";
 char path_3DHor_suffix[] = "_Hor.jpg";
 char path_3DVert_suffix[] = "_Vert.jpg";
-int counter = 22;
+int counter = 38;
 int errorReport;
 int main(int argc, char* argv[])
 {
