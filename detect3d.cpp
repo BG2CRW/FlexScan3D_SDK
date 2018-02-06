@@ -77,21 +77,10 @@ void detect3d::makeMask(cv::Mat depthImage,cv::Mat erodeBinary, cv::Mat silk2D,i
 	cv::Mat image2D, image3D;
 	double scale, tempx, tempy, x2D,  y2D, x3D, y3D;
 	scale = 1.35;
-	Point matchLocation_2Drecycle[2];
 	Point matchLocation_2Dapple[2];
-	Point matchLocation_2Derror[2];
-	Point matchLocation_3Drecycle[2];
 	Point matchLocation_3Dapple[2];
-	Point matchLocation_3Derror[2];
-	//string path_3Drecycle1 = "D:/model/model_recycle1.png";
-	//string path_3Drecycle2 = "D:/model/model_recycle2.png";
-	string path_3Derror1 = "D:/model/model_error1.jpg";
-	string path_3Derror2 = "D:/model/model_error2.jpg";
-	string path_3Dapple1 = "D:/model/model_apple1.png";
-	string path_3Dapple2 = "D:/model/model_apple2.png";
-	//string path_2Drecycle = "D:/model/model_2Drecycle.png";
 	string path_2Derror = "D:/model/model_2Drerror.jpg";
-	string path_2Dapple = "D:/model/model_2Dapple.png";
+	string path_2Dapple = "D:/model/model_2Dapple.jpg";
 	depthImage.copyTo(src);
 
 	for (int i = 0; i<src.rows; i++)
