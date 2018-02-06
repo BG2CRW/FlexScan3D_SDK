@@ -218,7 +218,7 @@ int detect2d::blackDetect(cv::Mat inputImage, cv::Mat edgeMask)
 	}
 	if (j > 0)
 	{
-		cout << "There are " << j << " black shine." << endl;
+		cout << "    There are " << j << " black shine." << endl;
 		resultID = 2;
 	}
 
@@ -285,10 +285,10 @@ cv::Mat detect2d::silkMask(cv::Mat inputImage, cv::Mat edgeMask, cv::Mat adpROI)
 	}
 	if (surfaceIndex == 1)
 	{
-		cout << "This is Engilsh face!1111111111111111" << endl;
+		cout << "    This is Engilsh face!1111111111111111" << endl;
 	}
 	else
-		cout << "This is Chinese face!2222222222222222" << endl;
+		cout << "    This is Chinese face!2222222222222222" << endl;
 	//cout << "size:" << contours_size8000.size() << endl;
 	Mat ContoursMast(dilate3.size(), CV_8U, Scalar(0));
 	drawContours(ContoursMast, contours_size8000, -1, Scalar(255), CV_FILLED);
@@ -438,7 +438,7 @@ int detect2d::liquidDetect(cv::Mat origin, cv::Mat inputImage)
 	}
 	if (contoursvalue.size() > 0)
 		resultID = 2;
-	cout << "There are " << liquidNum << " liquid defects." << endl;
+	cout << "    There are " << liquidNum << " liquid defects." << endl;
 	imshow("liquid", origin);
 	//imwrite("F:/liquidResult.jpg", origin);
 
@@ -451,7 +451,7 @@ int detect2d::alDetect(cv::Mat origin, cv::Mat inputImage)
 	Mat elementAl = getStructuringElement(MORPH_RECT, Size(3, 3));
 	erode(inputImage, inputImage, elementAl);
 	//dilate(InputImage, InputImage, elementAl);
-	//imshow("Al0", inputImage);
+	imshow("Al0", inputImage);
 	//imwrite("F:/Al.jpg", inputImage);
 
 	vector<vector<Point>> contours;
@@ -460,23 +460,49 @@ int detect2d::alDetect(cv::Mat origin, cv::Mat inputImage)
 	findContours(inputImage, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
 
 	//detect Al
-	vector<double> mean;
 	for (int Size = 0; Size < contours.size(); Size++)
 	{
+		Moments moms = moments(Mat(contours[Size]));
+		double area = moms.m00;
 		double value = 0;
-		double meanValue = 0;
+		double meanValue1 = 0, meanValue2 = 0, meanValue = 0;
 
-		for (int Size0 = 0; Size0 < contours[Size].size(); Size0++)
+		if (area > 10)	//choose right area
 		{
-			value += origin.at<uchar>(contours[Size][Size0].y, contours[Size][Size0].x);
-		}
-		meanValue = value / contours[Size].size();
-		mean.push_back(meanValue);
+			//compute the mean of the contours
+			for (int Size0 = 0; Size0 < contours[Size].size(); Size0++)
+			{
+				value += origin.at<uchar>(contours[Size][Size0].y, contours[Size][Size0].x);
+			}
+			meanValue1 = value / contours[Size].size();
 
-		if (meanValue > 190)	//Set the value
-		{
-			//cout << "No." << Size + 1 << " Al: " << meanValue << endl;
-			contoursfinal.push_back(contours[Size]);
+			//compute the mean of contours area
+			double sumAl = 0, numAl = 0;
+			Mat alMean(origin.size(), CV_8U, Scalar(0));
+			drawContours(alMean, contours, Size, Scalar(255), FILLED, 8, hierarchy, 0, Point());
+			bitwise_and(alMean, origin, alMean);
+			for (int j = 0; j<alMean.rows; j++)
+			{
+				uchar* data = alMean.ptr<uchar>(j);
+				for (int i = 0; i<alMean.cols; i++)
+				{
+					if (data[i] > 0)
+					{
+						sumAl = sumAl + data[i];
+						numAl++;
+					}
+				}
+			}
+			meanValue2 = sumAl / numAl;
+
+			//compute the mean of the middle area of the contours
+			meanValue = (sumAl - value) / (numAl - contours[Size].size());
+
+			if (meanValue > 235)	//Set the value
+			{
+				cout << "    No." << Size + 1 << " Al: area: " << area << " mean: " << meanValue << endl;
+				contoursfinal.push_back(contours[Size]);
+			}
 		}
 	}
 	//sort(mean.begin(), mean.end(), greater<double>());
@@ -586,7 +612,7 @@ int detect2d::scratchDetect(cv::Mat origin, cv::Mat inputImage)
 	//cout << couter << endl;
 	if (longScratch * 1 + midScratch*0.166 + shortScratch*0.125 > 1)
 	{
-		cout << "Scratch Long:" << longScratch << ", Mid: " << midScratch << ", Short: " << shortScratch << ". NG!" << endl;
+		cout << "    Scratch Long:" << longScratch << ", Mid: " << midScratch << ", Short: " << shortScratch << ". NG!" << endl;
 		resultID = 2;
 	}
 
