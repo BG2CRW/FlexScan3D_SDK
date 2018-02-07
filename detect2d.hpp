@@ -26,6 +26,7 @@ private:
 	
 	void showDefect(cv::Mat finalShow, cv::Mat inputImage);
 
+	int edgeDetect(cv::Mat inputImage, cv::Mat edgeMask);
 	int blackDetect(cv::Mat inputImage, cv::Mat edgeMask);
 	int alDetect(cv::Mat origin, cv::Mat inputImage);
 	int scratchDetect(cv::Mat origin, cv::Mat inputImage);

@@ -46,7 +46,11 @@ int detect2d::scratchCheck(cv::Mat image, cv::Mat& silkModel2d)
 	//get the edge mask and the edge area(imageEdge)
 	edgeMask = edgeMake(imageEdge);
 
-	//detect the black defects
+	//Detect the EDGE (mainly for hole point)
+	int edgeID = edgeDetect(imageEdge, edgeMask);
+	cout << "Result ID for Edge detection: " << edgeID << ". (1 for OK,2 for NG)" << endl;
+
+	//detect the BLACK defects
 	int blackID = blackDetect(imageBlack, edgeMask);
 	cout << "Result ID for Black detection: " << blackID << ". (1 for OK,2 for NG)" << endl;
 	imshow("Black", imageBlack);
@@ -97,21 +101,21 @@ int detect2d::scratchCheck(cv::Mat image, cv::Mat& silkModel2d)
 	Mask.copyTo(maskShow);
 	showDefect(imageShow, maskShow);
 
-	//Detect the Liquid
+	//Detect the LIQUID
 	cv::Mat imageLiquid, maskLiquid;
 	image.copyTo(imageLiquid);
 	Mask.copyTo(maskLiquid);
 	int liquidID = liquidDetect(imageLiquid, maskLiquid);
 	cout << "Result ID for Liquid detection: " << liquidID << ". (1 for OK,2 for NG)" << endl;
 
-	//Detect the Al
+	//Detect the AL
 	cv::Mat imageAl, maskAl;
 	image.copyTo(imageAl);
 	Mask.copyTo(maskAl);
 	int alID = alDetect(imageAl, maskAl);
 	cout << "Result ID for Al detection: " << alID << ". (1 for OK,2 for NG)" << endl;
 
-	//Detect the Scratch
+	//Detect the SCRATCH
 	cv::Mat imageScratch, maskScratch;
 	image.copyTo(imageScratch);
 	Mask.copyTo(maskScratch);
@@ -129,10 +133,10 @@ cv::Mat detect2d::edgeMake(cv::Mat origin)
 	//1.Make the edge
 	//1.1binary
 	Mat binary;
-	threshold(origin, binary, 220, 255, THRESH_BINARY_INV);
+	threshold(origin, binary, 250, 255, THRESH_BINARY_INV);
 	//1.2Pre process
 	Mat element009 = getStructuringElement(MORPH_RECT, Size(9, 9));
-	Mat element007 = getStructuringElement(MORPH_RECT, Size(7, 7));
+	Mat element007 = getStructuringElement(MORPH_RECT, Size(5, 5));
 	erode(binary, binary, element009);
 	dilate(binary, binary, element009);
 	dilate(binary, binary, element007);
@@ -150,26 +154,34 @@ cv::Mat detect2d::edgeMake(cv::Mat origin)
 	//1.4draw the outer outline and get the outer edge
 	Mat edgeMask(binary.size(), CV_8U, Scalar(0));
 	drawContours(edgeMask, contoursEdge, -1, Scalar(255), FILLED);
-	Mat element101 = getStructuringElement(MORPH_RECT, Size(101, 101));
-	erode(edgeMask, edgeMask, element101);
-	dilate(edgeMask, edgeMask, element101);
+	Mat element301 = getStructuringElement(MORPH_RECT, Size(301, 301));
+	erode(edgeMask, edgeMask, element301);
+	dilate(edgeMask, edgeMask, element301);
 	//imshow("edge mask", edgeMask);
 	//imwrite("D:/VS_Project/Image_Test/edgeHandle/edgetest/mask1.jpg", mask1);
 
 	//2.get the edge model
-	Mat innerEdge;
+	Mat innerEdge, innerMask;
 	Mat element039 = getStructuringElement(MORPH_RECT, Size(39, 39));
+	Mat element055 = getStructuringElement(MORPH_RECT, Size(55, 55));
 	erode(edgeMask, innerEdge, element039);
-	bitwise_not(innerEdge, innerEdge);
+	erode(edgeMask, innerMask, element055);
+	//bitwise_not(innerEdge, innerEdge);
+	bitwise_not(innerMask, innerMask);
 	//imshow("annular mask", innerEdge);
+	////Show the edge cut effect
+	//Mat showEffect;
+	//origin.copyTo(showEffect);
+	//bitwise_and(showEffect, innerEdge, showEffect);
+	//imshow("Show Effect", showEffect);
 
 	//3.get the annular edge
-	bitwise_and(origin, innerEdge, origin);
+	bitwise_and(origin, innerMask, origin);
 	bitwise_and(origin, edgeMask, origin);
 	//imshow("Annular Edge", origin);
 
 	//4.reverse the model
-	bitwise_not(innerEdge, innerEdge);
+	//bitwise_not(innerEdge, innerEdge);
 
 	for (int j = 0; j<innerEdge.rows; j++)
 	{
@@ -186,6 +198,99 @@ cv::Mat detect2d::edgeMake(cv::Mat origin)
 	}
 
 	return innerEdge;
+}
+
+int detect2d::edgeDetect(cv::Mat inputImage, cv::Mat edgeMask)
+{
+	int resultID = 1;
+
+	Mat imageEdge;
+	inputImage.copyTo(imageEdge);
+
+	//Using adpThreshold to find the Hole Point
+	for (int j = 0; j<inputImage.rows; j++)
+	{
+		uchar* data1 = inputImage.ptr<uchar>(j);
+		for (int i = 0; i<inputImage.cols; i++)
+		{
+			data1[i] = 255 - data1[i];
+		}
+	}
+	/*namedWindow("dyn_threshold", CV_WINDOW_NORMAL);
+	imshow("dyn_threshold", imageGray);
+	int value = 0;
+	createTrackbar("pos", "dyn_threshold", &value, 300, onChangeTrackBar, &imageGray);
+	waitKey();*/
+	Mat adpEdge;
+	adaptiveThreshold(inputImage, adpEdge, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY_INV, 5 * 2 + 1, 8);
+
+	//Outstand the Hole Point
+	Mat elementAo = getStructuringElement(MORPH_RECT, Size(2, 2));
+	dilate(adpEdge, adpEdge, elementAo);
+	//erode(adpEdge, adpEdge, elementAo);
+	namedWindow("adpEdge", CV_WINDOW_NORMAL);
+	imshow("adpEdge", adpEdge);
+
+	//Cut the wrong hole exactly on the outer edge
+	Mat outerEdgeMask;
+	Mat element039 = getStructuringElement(MORPH_RECT, Size(39, 39));
+	Mat elementOuter = getStructuringElement(MORPH_RECT, Size(5, 5));
+	dilate(edgeMask, outerEdgeMask, element039);//Transform the mask into outerEdgeMask
+	erode(outerEdgeMask, outerEdgeMask, elementOuter);
+	bitwise_and(adpEdge, outerEdgeMask, adpEdge);
+	/*namedWindow("adpEdge1", CV_WINDOW_NORMAL);
+	imshow("adpEdge1", adpEdge);*/
+
+	//Find and filter the Hole Point
+	vector<vector<Point>> contoursEdge, contoursAo;
+	vector<Vec4i> hierarchyEdge;
+	findContours(adpEdge, contoursEdge, hierarchyEdge, CV_RETR_TREE, CV_CHAIN_APPROX_NONE);
+	int smallNum = 0, bigNum = 0;
+	for (int i = 0; i < contoursEdge.size(); i++)
+	{
+		double area = contourArea(contoursEdge[i]);
+		double templength = arcLength(contoursEdge[i], true);
+		if (hierarchyEdge[i][2] == -1 && hierarchyEdge[i][3] != -1)
+		{
+			if (area > 30 && area < 300)
+			{
+				double r = templength / (2 * 3.1415);
+				if (3.1415 * r * r < 3 * area && templength < 150)
+				{
+					cout << "No." << i << ": Area is: " << area << ", Length is: " << templength << endl;
+					cout << 3.1415*r*r / area << endl;
+					contoursAo.push_back(contoursEdge[i]);
+
+					//Score the hole 1mm==6.67pixels
+					if (area > 100)
+					{
+						bigNum++;
+					}
+					else
+					{
+						smallNum++;
+					}
+				}
+			}
+		}
+	}
+
+	//Judge the score
+	if (smallNum * 0.2 + bigNum * 0.5 > 1)
+	{
+		cout << "    EdgeHole Big(0.5):" << bigNum << ", small(0.2): " << smallNum << ". NG!" << endl;
+		resultID = 2;
+	}
+
+	//Draw the results
+	for (int i = 0; i < contoursAo.size(); i++)
+	{
+		drawContours(imageEdge, contoursAo, i, Scalar(255), FILLED, 8, hierarchyEdge, 0, Point());
+	}
+	namedWindow("AoPoint", CV_WINDOW_NORMAL);
+	imshow("AoPoint", imageEdge);
+
+	return resultID;
 }
 
 int detect2d::blackDetect(cv::Mat inputImage, cv::Mat edgeMask)
@@ -612,7 +717,7 @@ int detect2d::scratchDetect(cv::Mat origin, cv::Mat inputImage)
 	//cout << couter << endl;
 	if (longScratch * 1 + midScratch*0.166 + shortScratch*0.125 > 1)
 	{
-		cout << "    Scratch Long:" << longScratch << ", Mid: " << midScratch << ", Short: " << shortScratch << ". NG!" << endl;
+		cout << "    Scratch Long(1):" << longScratch << ", Mid(0.166): " << midScratch << ", Short(0.125): " << shortScratch << ". NG!" << endl;
 		resultID = 2;
 	}
 
