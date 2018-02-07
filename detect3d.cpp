@@ -3,11 +3,67 @@
 #include "detect3d.hpp"
 #define DEBUG 1
 #define PI 3.1415926  
+#include <vector>
+#include <stack>
 
 class flatulence Flatulence;
 
 using namespace std;
 using namespace cv;
+
+/***************************************************************************************
+Function:  区域生长算法
+Input:     src 待处理原图像 pt 初始生长点 th 生长的阈值条件
+Output:    肺实质的所在的区域 实质区是白色，其他区域是黑色
+Description: 生长结果区域标记为白色(255),背景色为黑色(0)
+Return:    Mat
+Others:    NULL
+***************************************************************************************/
+Mat RegionGrow(Mat src, Point2i pt, int th)
+{
+	Point2i ptGrowing;                      //待生长点位置  
+	int nGrowLable = 0;                             //标记是否生长过  
+	int nSrcValue = 0;                              //生长起点灰度值  
+	int nCurValue = 0;                              //当前生长点灰度值  
+	Mat matDst;// = Mat::zeros(src.size(), CV_8UC1);   //创建一个空白区域，填充为黑色  
+	src.copyTo(matDst);
+													//生长方向顺序数据  
+	int DIR[8][2] = { { -1,-1 },{ 0,-1 },{ 1,-1 },{ 1,0 },{ 1,1 },{ 0,1 },{ -1,1 },{ -1,0 } };
+	vector<Point2i> vcGrowPt;                     //生长点栈  
+	vcGrowPt.push_back(pt);                         //将生长点压入栈中  
+	matDst.at<uchar>(pt.y, pt.x) = 255;               //标记生长点  
+	nSrcValue = src.at<uchar>(pt.y, pt.x);            //记录生长点的灰度值  
+
+	while (!vcGrowPt.empty())                       //生长栈不为空则生长  
+	{
+		pt = vcGrowPt.back();                       //取出一个生长点  
+		vcGrowPt.pop_back();
+
+		//分别对八个方向上的点进行生长  
+		for (int i = 0; i<9; ++i)
+		{
+			ptGrowing.x = pt.x + DIR[i][0];
+			ptGrowing.y = pt.y + DIR[i][1];
+			//检查是否是边缘点  
+			if (ptGrowing.x < 0 || ptGrowing.y < 0 || ptGrowing.x >(src.cols - 1) || (ptGrowing.y > src.rows - 1))
+				continue;
+
+			nGrowLable = matDst.at<uchar>(ptGrowing.y, ptGrowing.x);      //当前待生长点的灰度值  
+
+			if (nGrowLable == 0)                    //如果标记点还没有被生长  
+			{
+				nCurValue = src.at<uchar>(ptGrowing.y, ptGrowing.x);
+				if (abs(nSrcValue - nCurValue) < th)                 //在阈值范围内则生长  
+				{
+					matDst.at<uchar>(ptGrowing.y, ptGrowing.x) = 255;     //标记为白色  
+					vcGrowPt.push_back(ptGrowing);                  //将下一个生长点压入栈中  
+				}
+			}
+		}
+	}
+	return matDst.clone();
+}
+
 
 void detect3d::findModel(cv::Mat depthImage,string path,Point* matchLocation,float threshold)
 {
@@ -223,13 +279,52 @@ void ConnectEdge(Mat src)
 		}
 	}
 }
+cv::Mat gamaTest(Mat img)
+
+{
+
+	imshow("原始图像", img);
+	Mat imgGamma;
+	img.copyTo(imgGamma);
+
+	for (int i = 0; i < img.rows; i++)
+	{
+		for (int j = 0; j < img.cols; j++)
+		{
+			if (img.at<int>(i, j) == 0)
+			{
+				img.at<int>(i, j) = 127;
+			}
+
+			imgGamma.at<int>(i, j) = (img.at<int>(i, j) - 127) * 3 + 127;
+		}
+
+	}
+
+	//归一化
+
+	normalize(imgGamma, imgGamma, 0, 255, CV_MINMAX);
+
+	//转换为8 bit图像显示
+
+	convertScaleAbs(imgGamma, imgGamma);
+
+	//imshow("伽马增强效果", imgGamma);
+	//waitKey();
+	return imgGamma;
+}
 
 int detect3d::check3d(cv::Mat depthImage,cv::Mat silk2D)
 {
-	Mat canny, blackMask,grad_x,grad_y,abs_grad_x,abs_grad_y,dst,lapalace,abs_lapalace,canny1;
+	Mat canny, blackMask,grad_x,grad_y,abs_grad_x,abs_grad_y,dst,lapalace,abs_lapalace,canny1,imginter,imgunion,seedgrow;
+	imshow("Src", depthImage);
+	/*depthImage = gamaTest(depthImage);
+	imshow("gamaTest", depthImage);
+	waitKey();*/
 	depthImage.copyTo(blackMask);
+	//imshow("gamaTest2", blackMask);
 	makeMask(depthImage, blackMask, silk2D, 5, 4);
-	/*imshow("blackMask",blackMask);*/
+	imshow("blackMask",blackMask);
 
 	Sobel(depthImage, grad_x, CV_16S, 0, 1, 3, 1, 1, BORDER_DEFAULT);
 	convertScaleAbs(grad_x, abs_grad_x);
@@ -256,17 +351,64 @@ int detect3d::check3d(cv::Mat depthImage,cv::Mat silk2D)
 				canny.at<uchar>(i, j) = 0;
 		}
 	}
-	/*imshow("thresold", canny);*/
+	//imshow("thresold", canny);
 	Mat element = getStructuringElement(MORPH_RECT, Size(1, 1), Point(-1, -1));
 	Mat Mask;
 	erode(255 - canny, Mask, element);
-	/*imshow("Mask", Mask);*/
+	erode(Mask, Mask, element);
+	imshow("Mask", Mask);
+	Mask.copyTo(imginter);
+	Mask.copyTo(imgunion);
+
+	for (int i = 0; i<Mask.rows; i++)
+	{
+		for (int j = 0; j<Mask.cols; j++)
+		{
+ 			imgunion.at<uchar>(i, j) = Mask.at<uchar>(i, j) / 255 * blackMask.at<uchar>(i, j);
+		}
+	}
+	//imgunion = 255 - imgunion;
+	imshow("imgunion", imgunion);
+
+	Point2i seed;
+	seed.x = 1;
+	seed.y = 1;
+	for (int i = 0; i<canny.rows; i++)
+	{
+		for (int j = 0; j<canny.cols; j++)
+		{
+			if (Mask.at<uchar>(i, j) == 0 && blackMask.at<uchar>(i, j) == 0)
+			{
+				imginter.at<uchar>(i, j) = 0;
+				seed.x = j; 
+				seed.y = i;
+				imgunion = RegionGrow(imgunion, seed, 10);
+			}
+			else
+			{
+				imginter.at<uchar>(i, j) = 255;
+			}
+		}
+	}
+	imshow("imginter", imginter);
+	imshow("seedgrow", imgunion);
+	imgunion.copyTo(seedgrow);
+	//for (int i = 0; i<canny.rows; i++)
+	//{
+	//	for (int j = 0; j<canny.cols; j++)
+	//	{
+	//		blackMask.at<uchar>(i, j) = imgunion.at<uchar>(i, j) / 255 * blackMask.at<uchar>(i, j);
+	//	}
+	//}
+	//imshow("newblackMask", blackMask);
+	/*waitKey();*/
+	//Mask = Mask 
 	//waitKey();
 	ConnectEdge(Mask);
 	//imshow("Mask1", Mask);
 	vector<vector<Point> > contours;
 	vector<Vec4i> hierarchy;
-	findContours(Mask, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(-1, -1));
+	findContours(seedgrow, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(-1, -1));
 	Mat drawing = Mat::zeros(Mask.size(), CV_8U);
 	int j = 0;
 	for (int i = 0; i < contours.size(); i++)
@@ -287,7 +429,7 @@ int detect3d::check3d(cv::Mat depthImage,cv::Mat silk2D)
 	{
 		for (int j = 0; j<drawing.cols; j++)
 		{
-			drawing.at<uchar>(i, j) *= (blackMask.at<uchar>(i, j) / 255);
+			drawing.at<uchar>(i, j) = seedgrow.at<uchar>(i, j);
 		}
 	}
 	cv::Mat element15(3, 3, CV_8U, cv::Scalar(1));
