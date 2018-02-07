@@ -28,7 +28,7 @@ char path2D_prefix[] = "D:/Data/2D/";
 char path_suffix[] = ".jpg";
 char path_3DHor_suffix[] = "_Hor.jpg";
 char path_3DVert_suffix[] = "_Vert.jpg";
-int counter = 0;
+int counter = 1000;
 int errorReport;
 int main(int argc, char* argv[])
 {
@@ -99,7 +99,11 @@ int main(int argc, char* argv[])
 #ifdef READ
 		cv::Mat img = cv::imread(strPath2D,0);
 		cv::Mat silkModel2d;
-		int errorReport = Detect2d.scratchCheck(img, silkModel2d);
+		vector<vector<Point>> contoursAl, contoursLiquid;
+		cout << contoursAl.size() << " and " << contoursLiquid.size() << endl;
+		string error2D = Detect2d.scratchCheck(img, silkModel2d, contoursAl, contoursLiquid);
+		cout << "Error ID for 2D is: " << error2D << endl;
+		cout << contoursAl.size() << " and " << contoursLiquid.size() << endl;
 		//imwrite("D:/silkModel2d.jpg", silkModel2d);
 		//imshow("silkModel2d", silkModel2d);
 #endif
@@ -228,7 +232,7 @@ int main(int argc, char* argv[])
 #ifdef READ
 		cv::Mat imgdepthVert = cv::imread(strPath3DVert, 0);
 		cv::Mat imgdepthHor = cv::imread(strPath3DHor, 0);
-		int error3D = Detect3d.errorReport(imgdepthVert, imgdepthHor, silkModel2d);
+		//int error3D = Detect3d.errorReport(imgdepthVert, imgdepthHor, silkModel2d);
 #endif
 	}
 	return 0;

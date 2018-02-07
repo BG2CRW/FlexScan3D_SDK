@@ -9,7 +9,7 @@ void onChangeTrackBarCanny(int pos, void* data);
 
 cv::Mat imageTemp;
 
-int detect2d::scratchCheck(cv::Mat image, cv::Mat& silkModel2d)
+string detect2d::scratchCheck(cv::Mat image, cv::Mat& silkModel2d, vector<vector<Point>>& contoursAl, vector<vector<Point>>& contoursLiquid)
 {
 	//cvtColor(image, image, CV_RGB2GRAY, 0);
 	batteryKind = 2;
@@ -47,11 +47,11 @@ int detect2d::scratchCheck(cv::Mat image, cv::Mat& silkModel2d)
 	edgeMask = edgeMake(imageEdge);
 
 	//Detect the EDGE (mainly for hole point)
-	int edgeID = edgeDetect(imageEdge, edgeMask);
+	string edgeID = edgeDetect(imageEdge, edgeMask);
 	cout << "Result ID for Edge detection: " << edgeID << ". (1 for OK,2 for NG)" << endl;
 
 	//detect the BLACK defects
-	int blackID = blackDetect(imageBlack, edgeMask);
+	string blackID = blackDetect(imageBlack, edgeMask);
 	cout << "Result ID for Black detection: " << blackID << ". (1 for OK,2 for NG)" << endl;
 	imshow("Black", imageBlack);
 
@@ -105,26 +105,26 @@ int detect2d::scratchCheck(cv::Mat image, cv::Mat& silkModel2d)
 	cv::Mat imageLiquid, maskLiquid;
 	image.copyTo(imageLiquid);
 	Mask.copyTo(maskLiquid);
-	int liquidID = liquidDetect(imageLiquid, maskLiquid);
+	string liquidID = liquidDetect(imageLiquid, maskLiquid, contoursLiquid);
 	cout << "Result ID for Liquid detection: " << liquidID << ". (1 for OK,2 for NG)" << endl;
 
 	//Detect the AL
 	cv::Mat imageAl, maskAl;
 	image.copyTo(imageAl);
 	Mask.copyTo(maskAl);
-	int alID = alDetect(imageAl, maskAl);
+	string alID = alDetect(imageAl, maskAl, contoursAl);
 	cout << "Result ID for Al detection: " << alID << ". (1 for OK,2 for NG)" << endl;
 
 	//Detect the SCRATCH
 	cv::Mat imageScratch, maskScratch;
 	image.copyTo(imageScratch);
 	Mask.copyTo(maskScratch);
-	int scratchID = scratchDetect(imageScratch, maskScratch);
+	string scratchID = scratchDetect(imageScratch, maskScratch);
 	cout << "Result ID for Scratch detection: " << scratchID << ". (1 for OK,2 for NG)" << endl;
 
 	waitKey(0);
 
-	int errorID = 0;
+	string errorID = liquidID + alID + blackID + scratchID + edgeID;
 	return errorID;
 }
 
@@ -200,9 +200,9 @@ cv::Mat detect2d::edgeMake(cv::Mat origin)
 	return innerEdge;
 }
 
-int detect2d::edgeDetect(cv::Mat inputImage, cv::Mat edgeMask)
+string detect2d::edgeDetect(cv::Mat inputImage, cv::Mat edgeMask)
 {
-	int resultID = 1;
+	string resultID = "1";
 
 	Mat imageEdge;
 	inputImage.copyTo(imageEdge);
@@ -279,7 +279,7 @@ int detect2d::edgeDetect(cv::Mat inputImage, cv::Mat edgeMask)
 	if (smallNum * 0.2 + bigNum * 0.5 > 1)
 	{
 		cout << "    EdgeHole Big(0.5):" << bigNum << ", small(0.2): " << smallNum << ". NG!" << endl;
-		resultID = 2;
+		resultID = "2";
 	}
 
 	//Draw the results
@@ -293,9 +293,9 @@ int detect2d::edgeDetect(cv::Mat inputImage, cv::Mat edgeMask)
 	return resultID;
 }
 
-int detect2d::blackDetect(cv::Mat inputImage, cv::Mat edgeMask)
+string detect2d::blackDetect(cv::Mat inputImage, cv::Mat edgeMask)
 {
-	int resultID = 1;
+	string resultID = "1";
 	//binary(not stable)
 	threshold(inputImage, inputImage, 75, 255, THRESH_BINARY_INV);
 	//cut edge using the model
@@ -324,7 +324,7 @@ int detect2d::blackDetect(cv::Mat inputImage, cv::Mat edgeMask)
 	if (j > 0)
 	{
 		cout << "    There are " << j << " black shine." << endl;
-		resultID = 2;
+		resultID = "2";
 	}
 
 	return resultID;
@@ -496,9 +496,9 @@ cv::Mat detect2d::silkMask(cv::Mat inputImage, cv::Mat edgeMask, cv::Mat adpROI)
 	return ROIImg2;
 }
 
-int detect2d::liquidDetect(cv::Mat origin, cv::Mat inputImage)
+string detect2d::liquidDetect(cv::Mat origin, cv::Mat inputImage, vector<vector<Point>>& contoursLiquid)
 {
-	int resultID = 1;
+	string resultID = "1";
 
 	Mat element33 = getStructuringElement(MORPH_RECT, Size(3, 3));
 	Mat element44 = getStructuringElement(MORPH_RECT, Size(10, 10));
@@ -508,7 +508,7 @@ int detect2d::liquidDetect(cv::Mat origin, cv::Mat inputImage)
 
 	//Find the damages
 	vector<vector<Point>> contours;
-	vector<vector<Point>> contoursvalue; 
+	//vector<vector<Point>> contoursvalue; 
 	vector<Vec4i> hierarchy;
 	findContours(inputImage, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
 	//find the black and white points
@@ -534,15 +534,15 @@ int detect2d::liquidDetect(cv::Mat origin, cv::Mat inputImage)
 		if (whiteNum > 3 && blackNum > 3)
 		{
 			liquidNum++;
-			contoursvalue.push_back(contours[i]);
+			contoursLiquid.push_back(contours[i]);
 		}
 	}
-	for (int i = 0; i < contoursvalue.size(); i++)
+	for (int i = 0; i < contoursLiquid.size(); i++)
 	{
-		drawContours(origin, contoursvalue, i, Scalar(0), FILLED, 8, hierarchy, 0, Point());
+		drawContours(origin, contoursLiquid, i, Scalar(0), FILLED, 8, hierarchy, 0, Point());
 	}
-	if (contoursvalue.size() > 0)
-		resultID = 2;
+	if (contoursLiquid.size() > 0)
+		resultID = "2";
 	cout << "    There are " << liquidNum << " liquid defects." << endl;
 	imshow("liquid", origin);
 	//imwrite("F:/liquidResult.jpg", origin);
@@ -550,9 +550,9 @@ int detect2d::liquidDetect(cv::Mat origin, cv::Mat inputImage)
 	return resultID;
 }
 
-int detect2d::alDetect(cv::Mat origin, cv::Mat inputImage)
+string detect2d::alDetect(cv::Mat origin, cv::Mat inputImage, vector<vector<Point>>& contoursAl)
 {
-	int resultID = 1;
+	string resultID = "2";
 	Mat elementAl = getStructuringElement(MORPH_RECT, Size(3, 3));
 	erode(inputImage, inputImage, elementAl);
 	//dilate(InputImage, InputImage, elementAl);
@@ -560,7 +560,7 @@ int detect2d::alDetect(cv::Mat origin, cv::Mat inputImage)
 	//imwrite("F:/Al.jpg", inputImage);
 
 	vector<vector<Point>> contours;
-	vector<vector<Point>> contoursfinal;
+	//vector<vector<Point>> contoursfinal;
 	vector<Vec4i> hierarchy;
 	findContours(inputImage, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
 
@@ -606,28 +606,28 @@ int detect2d::alDetect(cv::Mat origin, cv::Mat inputImage)
 			if (meanValue > 235)	//Set the value
 			{
 				cout << "    No." << Size + 1 << " Al: area: " << area << " mean: " << meanValue << endl;
-				contoursfinal.push_back(contours[Size]);
+				contoursAl.push_back(contours[Size]);
 			}
 		}
 	}
 	//sort(mean.begin(), mean.end(), greater<double>());
 	//cout << "Max:" << mean[0] << endl;
-	for (int i = 0; i < contoursfinal.size(); i++)
+	for (int i = 0; i < contoursAl.size(); i++)
 	{
-		drawContours(origin, contoursfinal, i, Scalar(0), FILLED, 8, hierarchy, 0, Point());
+		drawContours(origin, contoursAl, i, Scalar(0), FILLED, 8, hierarchy, 0, Point());
 	}
 	imshow("Al", origin);
 	//imwrite("F:/AlResult.jpg", origin);
 
-	if (contoursfinal.size() > 0)
-		resultID = 2;
+	if (contoursAl.size() > 0)
+		resultID = "2";
 
 	return resultID;
 }
 
-int detect2d::scratchDetect(cv::Mat origin, cv::Mat inputImage)
+string detect2d::scratchDetect(cv::Mat origin, cv::Mat inputImage)
 {
-	int resultID = 1;
+	string resultID = "1";
 
 	////Make a adaptive printing in Chinese face
 	//Mat origin2, adpPrinting;
@@ -718,7 +718,7 @@ int detect2d::scratchDetect(cv::Mat origin, cv::Mat inputImage)
 	if (longScratch * 1 + midScratch*0.166 + shortScratch*0.125 > 1)
 	{
 		cout << "    Scratch Long(1):" << longScratch << ", Mid(0.166): " << midScratch << ", Short(0.125): " << shortScratch << ". NG!" << endl;
-		resultID = 2;
+		resultID = "2";
 	}
 
 	return resultID;
