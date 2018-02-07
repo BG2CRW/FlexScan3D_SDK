@@ -358,6 +358,7 @@ cv::Mat gamaTest(Mat img)
 	return imgGamma;
 }
 
+
 int detect3d::check3d(cv::Mat depthImage,cv::Mat silk2D)
 {
 	Mat canny, blackMask,grad_x,grad_y,abs_grad_x,abs_grad_y,dst,lapalace,abs_lapalace,canny1,imginter,imgunion,seedgrow;
@@ -452,74 +453,20 @@ int detect3d::check3d(cv::Mat depthImage,cv::Mat silk2D)
 			}
 		}
 	}
-	imshow("hua", dep1);
-	waitKey();
+	/*imshow("hua", dep1);*/
 
 	Mat element1 = getStructuringElement(MORPH_RECT, Size(5, 5), Point(-1, -1));
 	erode(seedgrow, seedgrow, element1);
 	dilate(seedgrow, seedgrow, element1);
 	imshow("seedgrowerode", seedgrow);
-	vector<vector<Point> > contours;
-	vector<Vec4i> hierarchy;
-	findContours(seedgrow, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(-1, -1));
-	Mat drawing = Mat::zeros(Mask.size(), CV_8U);
-	int j = 0;
-	for (int i = 0; i < contours.size(); i++)
-	{
-		Moments moms = moments(Mat(contours[i]));
-		double area = moms.m00;    //零阶矩即为二值图像的面积  double area = moms.m00;  
-								   //如果面积超出了设定的范围，则不再考虑该斑点  
+	rectangle(seedgrow, Point(0, 0), Point(seedgrow.cols, 10), Scalar(255, 255, 255), CV_FILLED, 8, 0);
+	rectangle(seedgrow, Point(0, 0), Point(10, seedgrow.rows), Scalar(255, 255, 255), CV_FILLED, 8, 0);
+	rectangle(seedgrow, Point(0, seedgrow.rows-10), Point(seedgrow.cols, seedgrow.rows), Scalar(255, 255, 255), CV_FILLED, 8, 0);
+	rectangle(seedgrow, Point(seedgrow.cols-10, 0), Point(seedgrow.cols, seedgrow.rows), Scalar(255, 255, 255), CV_FILLED, 8, 0);
+	imshow("seed", seedgrow);
 
-		if (area > 27 && area < 10000)
-		{
-			drawContours(drawing, contours, i, Scalar(255), FILLED, 8, hierarchy, 0, Point());
-			j = j + 1;
-
-		}
-	}
-
-	for (int i = 0; i<drawing.rows; i++)
-	{
-		for (int j = 0; j<drawing.cols; j++)
-		{
-			drawing.at<uchar>(i, j) = seedgrow.at<uchar>(i, j);
-		}
-	}
-	cv::Mat element15(3, 3, CV_8U, cv::Scalar(1));
-	cv::Mat close;
-	cv::morphologyEx(drawing, close, cv::MORPH_CLOSE, element15);
-	/*imshow("drawing", drawing);*/
-	//waitKey();
-	vector<vector<Point> > contours1;
-	vector<Vec4i> hierarchy1;
-	findContours(close, contours1, hierarchy1, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
-	//imshow("close", close);
-	j = 0;
-	int m = 0;
-	for (int i = 0; i < contours1.size(); i++)
-	{
-		Moments moms = moments(Mat(contours1[i]));
-		double area = moms.m00;    //零阶矩即为二值图像的面积  double area = moms.m00;  
-								   //如果面积超出了设定的范围，则不再考虑该斑点  
-
-		double area1 = contourArea(contours1[i]);
-		if (area >27 && area < 100000)
-		{
-			drawContours(depthImage, contours1, i, Scalar(0, 0, 255), FILLED, 8, hierarchy1, 0, Point());
-			j = j + 1;
-
-		}
-		else if (area >= 0 && area <= 27)
-		{
-			drawContours(depthImage, contours1, i, Scalar(255, 0, 0), FILLED, 8, hierarchy1, 0, Point());
-			m = m + 1;
-		}
-	}
-	char t[256];
-	cout << j << endl;
-	imshow("Result", depthImage);
-	waitKey();
-	drawing.copyTo(depthImage);
+	
+	int j = 1;
 	return j;
 }
 
@@ -595,3 +542,103 @@ int detect3d::findlogo(cv::Mat image3D, int face, Point* matchLocation_3Dapple)
 		}
 	}
 }
+void detect3d::judge(cv::Mat image, int* x, int* y, int* area, int* length, int *depth)
+{
+	cv::Mat seedgrow;
+	image.copyTo(seedgrow);
+	vector<vector<Point> > contours;
+	vector<Vec4i> hierarchy;
+	findContours(seedgrow, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(-1, -1));
+	Mat drawing = Mat::zeros(seedgrow.size(), CV_8U);
+	int j = 0;
+	for (int i = 0; i < contours.size(); i++)
+	{
+		Moments moms = moments(Mat(contours[i]));
+		double area = moms.m00;    //零阶矩即为二值图像的面积  double area = moms.m00;  
+								   //如果面积超出了设定的范围，则不再考虑该斑点  
+
+		if (area > 27 && area < 10000)
+		{
+			drawContours(drawing, contours, i, Scalar(255), FILLED, 8, hierarchy, 0, Point());
+			j = j + 1;
+
+		}
+	}
+
+	for (int i = 0; i<drawing.rows; i++)
+	{
+		for (int j = 0; j<drawing.cols; j++)
+		{
+			drawing.at<uchar>(i, j) = seedgrow.at<uchar>(i, j);
+		}
+	}
+	cv::Mat element15(3, 3, CV_8U, cv::Scalar(1));
+	cv::Mat close;
+	cv::morphologyEx(drawing, close, cv::MORPH_CLOSE, element15);
+	/*imshow("drawing", drawing);*/
+	//waitKey();
+	vector<vector<Point> > contours1;
+	vector<Vec4i> hierarchy1;
+	vector<Point2f> mc(contours.size());//center of mass
+										//计算轮廓矩
+	vector<Moments> mu(contours.size());
+	for (int i = 0; i < contours.size(); i++)
+	{
+		mu[i] = moments(contours[i], false);
+	}
+
+	findContours(close, contours1, hierarchy1, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+	imshow("close", close);
+	for (int i = 0; i < contours1.size(); i++)
+	{
+		cv::Mat zeroimg = Mat::zeros(close.size(), CV_8U);
+		drawContours(zeroimg, contours1, 1, Scalar(255, 255, 255), FILLED, 8, hierarchy1, 0, Point());
+		Moments moms = moments(Mat(contours[i]));
+		area[i] = moms.m00; 
+		length[i]=arcLength(contours[i], true);
+		mc[i] = Point2d(mu[i].m10 / mu[i].m00, mu[i].m01 / mu[i].m00);
+		x[i] = mc[i].x;
+		y[i] = mc[i].y;
+	}
+	/*imshow("zeroimg", zeroimg);*/
+
+	//j = 0;
+	//int m = 0;
+	//int resultID = 0;
+	//for (int i = 0; i < contours1.size(); i++)
+	//{
+	//	Moments moms = moments(Mat(contours1[i]));
+	//	double area = moms.m00;    //零阶矩即为二值图像的面积  double area = moms.m00;  
+	//	double templength = arcLength(contours[i], true);   //如果面积超出了设定的范围，则不再考虑该斑点  
+
+	//	double area1 = contourArea(contours1[i]);
+	//	if (area > 500)
+	//	{
+	//		resultID++;
+	//	}
+	//	if (area >27 && area < 100000)
+	//	{
+	//		drawContours(depthImage, contours1, i, Scalar(0, 0, 255), FILLED, 8, hierarchy1, 0, Point());
+	//		length.push_back(templength);
+	//		cout << "The " << i << "th scratch Length: " << templength / 2 << "  th area: " << area << endl;
+	//		j = j + 1;
+
+	//	}
+	//	else if (area >= 0 && area <= 27)
+	//	{
+	//		drawContours(depthImage, contours1, i, Scalar(255, 0, 0), FILLED, 8, hierarchy1, 0, Point());
+	//		cout << "The " << i << "th dot Length: " << templength / 2 << "  th area: " << area << endl;
+	//		m = m + 1;
+	//	}
+	//}
+	//if (resultID)
+	//{
+	//	cout << "NG" << endl;
+	//}
+	//char t[256];
+	//cout << j << endl;
+	//imshow("Result", depthImage);
+	//waitKey();
+	//drawing.copyTo(depthImage);
+}
+

@@ -14,5 +14,7 @@ public:
 	void findModel(cv::Mat depthImage,string path,Point* matchLocation,float threshold);
 	int errorReport(cv::Mat imgdepthVert, cv::Mat imgdepthHor, cv::Mat silk2D);
 	int findlogo(cv::Mat image3D, int face, Point *matchLocation_3Dapple);
+	void judge(cv::Mat image, int* x, int* y, int* area, int* length, int *depth);
+
 };
 #endif
