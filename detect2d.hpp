@@ -26,16 +26,17 @@ private:
 	
 	void showDefect(cv::Mat finalShow, cv::Mat inputImage);
 
-	int blackDetect(cv::Mat inputImage, cv::Mat edgeMask);
-	int alDetect(cv::Mat origin, cv::Mat inputImage);
-	int scratchDetect(cv::Mat origin, cv::Mat inputImage);
-	int liquidDetect(cv::Mat origin, cv::Mat inputImage);
-
+	string edgeDetect(cv::Mat inputImage, cv::Mat edgeMask);
+	string blackDetect(cv::Mat inputImage, cv::Mat edgeMask);
+	string alDetect(cv::Mat origin, cv::Mat inputImage, vector<vector<Point>>& contoursAl);
+	string scratchDetect(cv::Mat origin, cv::Mat inputImage);
+	string liquidDetect(cv::Mat origin, cv::Mat inputImage, vector<vector<Point>>& contoursLiquid);
+	string dirtyDetect(cv::Mat adpModel, cv::Mat imageScratch, cv::Mat imageDirty);
 public:
 	//Confirm the surface in function "silkMask"
 	int surfaceIndex;//1 for English face, 2 for Chinese face
 
 	int batteryKind;
-	int scratchCheck(cv::Mat image, cv::Mat& silkModel2d);
+	string scratchCheck(cv::Mat image, cv::Mat& silkModel2d, vector<vector<Point>>& contoursAl, vector<vector<Point>>& contoursLiquid);
 };
 #endif
