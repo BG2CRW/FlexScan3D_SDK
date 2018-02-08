@@ -1,4 +1,4 @@
-//预处理：滤波+canny
+
 #include "flatulence.hpp"
 #include "detect3d.hpp"
 #define DEBUG 1
@@ -12,51 +12,45 @@ using namespace std;
 using namespace cv;
 
 /***************************************************************************************
-Function:  区域生长算法
-Input:     src 待处理原图像 pt 初始生长点 th 生长的阈值条件
-Output:    肺实质的所在的区域 实质区是白色，其他区域是黑色
-Description: 生长结果区域标记为白色(255),背景色为黑色(0)
-Return:    Mat
-Others:    NULL
+
 ***************************************************************************************/
 Mat RegionGrow(Mat src, Point2i pt, int th)
 {
-	Point2i ptGrowing;                      //待生长点位置  
-	int nGrowLable = 0;                             //标记是否生长过  
-	int nSrcValue = 0;                              //生长起点灰度值  
-	int nCurValue = 0;                              //当前生长点灰度值  
-	Mat matDst;// = Mat::zeros(src.size(), CV_8UC1);   //创建一个空白区域，填充为黑色  
+	Point2i ptGrowing;                      
+	int nGrowLable = 0;                             
+	int nSrcValue = 0;                            
+	int nCurValue = 0;                              
+	Mat matDst;// = Mat::zeros(src.size(), CV_8UC1);  
 	src.copyTo(matDst);
-													//生长方向顺序数据  
+													
 	int DIR[8][2] = { { -1,-1 },{ 0,-1 },{ 1,-1 },{ 1,0 },{ 1,1 },{ 0,1 },{ -1,1 },{ -1,0 } };
-	vector<Point2i> vcGrowPt;                     //生长点栈  
-	vcGrowPt.push_back(pt);                         //将生长点压入栈中  
-	matDst.at<uchar>(pt.y, pt.x) = 255;               //标记生长点  
-	nSrcValue = src.at<uchar>(pt.y, pt.x);            //记录生长点的灰度值  
+	vector<Point2i> vcGrowPt;                    
+	vcGrowPt.push_back(pt);                         
+	matDst.at<uchar>(pt.y, pt.x) = 255;               
+	nSrcValue = src.at<uchar>(pt.y, pt.x);            
 
-	while (!vcGrowPt.empty())                       //生长栈不为空则生长  
+	while (!vcGrowPt.empty())                       
 	{
-		pt = vcGrowPt.back();                       //取出一个生长点  
+		pt = vcGrowPt.back();                       
 		vcGrowPt.pop_back();
 
-		//分别对八个方向上的点进行生长  
+		
 		for (int i = 0; i<9; ++i)
 		{
 			ptGrowing.x = pt.x + DIR[i][0];
 			ptGrowing.y = pt.y + DIR[i][1];
-			//检查是否是边缘点  
+			
 			if (ptGrowing.x < 0 || ptGrowing.y < 0 || ptGrowing.x >(src.cols - 1) || (ptGrowing.y > src.rows - 1))
 				continue;
 
-			nGrowLable = matDst.at<uchar>(ptGrowing.y, ptGrowing.x);      //当前待生长点的灰度值  
-
-			if (nGrowLable == 0)                    //如果标记点还没有被生长  
+			nGrowLable = matDst.at<uchar>(ptGrowing.y, ptGrowing.x);      
+			if (nGrowLable == 0)                    
 			{
 				nCurValue = src.at<uchar>(ptGrowing.y, ptGrowing.x);
-				if (abs(nSrcValue - nCurValue) < th)                 //在阈值范围内则生长  
+				if (abs(nSrcValue - nCurValue) < th)                 
 				{
-					matDst.at<uchar>(ptGrowing.y, ptGrowing.x) = 255;     //标记为白色  
-					vcGrowPt.push_back(ptGrowing);                  //将下一个生长点压入栈中  
+					matDst.at<uchar>(ptGrowing.y, ptGrowing.x) = 255;    
+					vcGrowPt.push_back(ptGrowing);                  
 				}
 			}
 		}
@@ -66,42 +60,42 @@ Mat RegionGrow(Mat src, Point2i pt, int th)
 
 Mat RegionGrow1(Mat src, Point2i pt, int th)
 {
-	Point2i ptGrowing;                      //待生长点位置  
-	int nGrowLable = 0;                             //标记是否生长过  
-	int nSrcValue = 0;                              //生长起点灰度值  
-	int nCurValue = 0;                              //当前生长点灰度值  
-	Mat matDst = Mat::zeros(src.size(), CV_8UC1);   //创建一个空白区域，填充为黑色  
+	Point2i ptGrowing;                      
+	int nGrowLable = 0;                            
+	int nSrcValue = 0;                              
+	int nCurValue = 0;                              
+	Mat matDst = Mat::zeros(src.size(), CV_8UC1);   
 	src.copyTo(matDst);
-	//生长方向顺序数据  
-	int DIR[8][2] = { { -1,-1 },{ 0,-1 },{ 1,-1 },{ 1,0 },{ 1,1 },{ 0,1 },{ -1,1 },{ -1,0 } };
-	vector<Point2i> vcGrowPt;                     //生长点栈  
-	vcGrowPt.push_back(pt);                         //将生长点压入栈中  
-	matDst.at<uchar>(pt.y, pt.x) = 255;               //标记生长点  
-	nSrcValue = src.at<uchar>(pt.y, pt.x);            //记录生长点的灰度值  
 
-	while (!vcGrowPt.empty())                       //生长栈不为空则生长  
+	int DIR[8][2] = { { -1,-1 },{ 0,-1 },{ 1,-1 },{ 1,0 },{ 1,1 },{ 0,1 },{ -1,1 },{ -1,0 } };
+	vector<Point2i> vcGrowPt;                    
+	vcGrowPt.push_back(pt);                        
+	matDst.at<uchar>(pt.y, pt.x) = 255;             
+	nSrcValue = src.at<uchar>(pt.y, pt.x);          
+
+	while (!vcGrowPt.empty())                     
 	{
-		pt = vcGrowPt.back();                       //取出一个生长点  
+		pt = vcGrowPt.back();                     
 		vcGrowPt.pop_back();
 
-		//分别对八个方向上的点进行生长  
+		
 		for (int i = 0; i<9; ++i)
 		{
 			ptGrowing.x = pt.x + DIR[i][0];
 			ptGrowing.y = pt.y + DIR[i][1];
-			//检查是否是边缘点  
+			  
 			if (ptGrowing.x < 0 || ptGrowing.y < 0 || ptGrowing.x >(src.cols - 1) || (ptGrowing.y > src.rows - 1))
 				continue;
 
-			nGrowLable = matDst.at<uchar>(ptGrowing.y, ptGrowing.x);      //当前待生长点的灰度值  
+			nGrowLable = matDst.at<uchar>(ptGrowing.y, ptGrowing.x);    
 
-			if (nGrowLable == 0)                    //如果标记点还没有被生长  
+			if (nGrowLable == 0)                 
 			{
 				nCurValue = src.at<uchar>(ptGrowing.y, ptGrowing.x);
-				if (abs(nSrcValue - nCurValue) < th)                 //在阈值范围内则生长  
+				if (abs(nSrcValue - nCurValue) < th)              
 				{
-					matDst.at<uchar>(ptGrowing.y, ptGrowing.x) = 255;     //标记为白色  
-					vcGrowPt.push_back(ptGrowing);                  //将下一个生长点压入栈中  
+					matDst.at<uchar>(ptGrowing.y, ptGrowing.x) = 255;    
+					vcGrowPt.push_back(ptGrowing);                
 				}
 			}
 		}
@@ -464,7 +458,7 @@ int detect3d::check3d(cv::Mat depthImage,cv::Mat silk2D, vector<vector<Point>>& 
 	rectangle(seedgrow, Point(0, seedgrow.rows-10), Point(seedgrow.cols, seedgrow.rows), Scalar(255, 255, 255), CV_FILLED, 8, 0);
 	rectangle(seedgrow, Point(seedgrow.cols-10, 0), Point(seedgrow.cols, seedgrow.rows), Scalar(255, 255, 255), CV_FILLED, 8, 0);
 	imshow("seed", seedgrow);
-	int x1[20]; int y1[20]; int area1[20]; int length1[20]; int depth1[20]; int num; int xmax[20]; int ymax[20]; int depthmin[20];
+	int x1[200]; int y1[200]; int area1[200]; int length1[200]; int depth1[200]; int num; int xmax[200]; int ymax[200]; int depthmin[200];
 	judge(depthImage,seedgrow, x1, y1,xmax,ymax,area1, length1, depth1,depthmin,num);
 	int j = 1;
 	return j;
@@ -572,7 +566,6 @@ void detect3d::judge(cv::Mat src,cv::Mat image, int* x, int* y, int* xmax,int* y
 	findContours(close, contours1, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(-1, -1));
 	vector<Vec4i> hierarchy1;
 	vector<Point2f> mc(contours1.size());//center of mass
-										//计算轮廓矩
 	vector<Moments> mu(contours1.size());
 	for (int i = 0; i < contours1.size(); i++)
 	{

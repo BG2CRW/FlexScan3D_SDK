@@ -54,7 +54,7 @@ string detect2d::scratchCheck(cv::Mat image, cv::Mat& silkModel2d, vector<vector
 	//detect the BLACK defects
 	string blackID = blackDetect(imageBlack, edgeMask);
 	cout << "Result ID for Black detection: " << blackID << ". (1 for OK,2 for NG)" << endl;
-	//imshow("Black", imageBlack);
+	imshow("Black", imageBlack);
 
 	//make adaptive model
 	cv::Mat adpModel, adpROI;
@@ -67,7 +67,7 @@ string detect2d::scratchCheck(cv::Mat image, cv::Mat& silkModel2d, vector<vector
 	////imwrite("D:/661modeladp.jpg", adpROI);
 	//Model Make
 	adpModel = silkMask(image2, edgeMask, adpROI);
-	//imshow("adpModel0", imageTemp);
+	imshow("adpModel0", imageTemp);
 	imwrite("D:/661model0.jpg", imageTemp);
 	//imshow("adpModel", adpModel);
 	imwrite("D:/661model.jpg", adpModel);
@@ -626,7 +626,7 @@ string detect2d::alDetect(cv::Mat origin, cv::Mat inputImage, vector<vector<Poin
 	{
 		drawContours(origin, contoursAl, i, Scalar(0), FILLED, 8, hierarchy, 0, Point());
 	}
-	//imshow("Al", origin);
+	imshow("Al", origin);
 	//imwrite("F:/AlResult.jpg", origin);
 
 	if (contoursAl.size() > 0)
@@ -700,7 +700,7 @@ string detect2d::scratchDetect(cv::Mat origin, cv::Mat inputImage)
 	{
 		drawContours(origin, contoursvalue, i, Scalar(0), FILLED, 8, hierarchy, 0, Point());
 	}
-	//imshow("scratch", origin);
+	imshow("scratch", origin);
 	//imwrite("F:/scratchResult.jpg", origin);
 
 	//compute the real length
@@ -862,7 +862,7 @@ string detect2d::dirtyDetect(cv::Mat adpModel, cv::Mat imageScratch, cv::Mat ima
 		for (int j = 0;j < blackDirty.cols;++j)
 		{
 			if (ptr1[j] == 0)
-				ptr2[j] == 0;
+				ptr2[j] = 0;
 		}
 	}
 
@@ -873,7 +873,7 @@ string detect2d::dirtyDetect(cv::Mat adpModel, cv::Mat imageScratch, cv::Mat ima
 	double dirtymarks = 0;
 	for (int i = 0;i < contours44.size();++i)
 	{
-		float dirtyarea = contourArea(contours44[i]);
+		double dirtyarea = contourArea(contours44[i]);
 		if (dirtyarea > 200)
 		{
 			contoursDirty.push_back(contours44[i]);
