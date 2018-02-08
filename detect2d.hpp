@@ -31,7 +31,7 @@ private:
 	string alDetect(cv::Mat origin, cv::Mat inputImage, vector<vector<Point>>& contoursAl);
 	string scratchDetect(cv::Mat origin, cv::Mat inputImage);
 	string liquidDetect(cv::Mat origin, cv::Mat inputImage, vector<vector<Point>>& contoursLiquid);
-
+	string dirtyDetect(cv::Mat adpModel, cv::Mat imageScratch, cv::Mat imageDirty);
 public:
 	//Confirm the surface in function "silkMask"
 	int surfaceIndex;//1 for English face, 2 for Chinese face

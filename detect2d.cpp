@@ -35,13 +35,14 @@ string detect2d::scratchCheck(cv::Mat image, cv::Mat& silkModel2d, vector<vector
 		minCol = 270;
 		maxCol = 1460;
 	}
-	cv::Mat image2, imageEdge, edgeMask, Mask, imageBlack;
+	cv::Mat image2, imageEdge, edgeMask, Mask, imageBlack, imageDirty;
 	imshow("Image", image);
 	imwrite("D:/660image.jpg", image);
 	image.copyTo(image2);
 	image.copyTo(imageEdge);
 	image.copyTo(imageBlack);
 	image.copyTo(imageTemp);
+	image.copyTo(imageDirty);
 
 	//get the edge mask and the edge area(imageEdge)
 	edgeMask = edgeMake(imageEdge);
@@ -71,7 +72,7 @@ string detect2d::scratchCheck(cv::Mat image, cv::Mat& silkModel2d, vector<vector
 	imshow("adpModel", adpModel);
 	imwrite("D:/661model.jpg", adpModel);
 	adpModel.copyTo(silkModel2d);
-	waitKey();
+	//waitKey();
 
 	//Prehandle of the image
 	Mask = preProcess(image2);
@@ -122,9 +123,17 @@ string detect2d::scratchCheck(cv::Mat image, cv::Mat& silkModel2d, vector<vector
 	string scratchID = scratchDetect(imageScratch, maskScratch);
 	cout << "Result ID for Scratch detection: " << scratchID << ". (1 for OK,2 for NG)" << endl;
 
+	
+	//detect dirty
+	Mat adpModelTemp;
+	bitwise_and(adpModel, edgeMask, adpModelTemp);
+	string dirtyID;
+	dirtyID = dirtyDetect(adpModelTemp, imageScratch, imageDirty);
+	cout << "Result ID for dirty detection: " << dirtyID << ". (1 for OK,2 for NG)" << endl;
+
 	waitKey(0);
 
-	string errorID = liquidID + alID + blackID + scratchID + edgeID;
+	string errorID = liquidID + alID + blackID + scratchID + edgeID + dirtyID;
 	return errorID;
 }
 
@@ -789,6 +798,107 @@ void detect2d::edgeCut(cv::Mat inputImage)
 		}
 	}
 }
+
+string detect2d::dirtyDetect(cv::Mat adpModel, cv::Mat imageScratch, cv::Mat imageDirty)
+{
+	string dirty_detection_flag = "1";
+	Mat element33 = getStructuringElement(MORPH_RECT, Size(3, 3));
+	Mat element55 = getStructuringElement(MORPH_RECT, Size(5, 5));
+	Mat elementzz = getStructuringElement(MORPH_RECT, Size(35, 35));
+	Mat imgDirty, imgDirtywhite, inputImage;
+	imageDirty.copyTo(inputImage);
+	bitwise_and(imageScratch, adpModel, imgDirty);
+	threshold(imgDirty, imgDirtywhite, 210, 255, THRESH_BINARY);
+	dilate(imgDirtywhite, imgDirtywhite, element55);
+	Mat dirtyMask2;
+	adpModel.copyTo(dirtyMask2);
+	dilate(dirtyMask2, dirtyMask2, elementzz);
+	erode(dirtyMask2, dirtyMask2, elementzz);
+	erode(dirtyMask2, dirtyMask2, elementzz);
+
+
+	vector<vector<Point>> contours00, contours11;
+	findContours(imgDirtywhite, contours00, CV_RETR_CCOMP, CV_CHAIN_APPROX_NONE);
+	for (int i = 0;i < contours00.size();++i)
+	{
+		if ((contourArea(contours00[i]) > 40) && (contourArea(contours00[i])<50000))
+		{
+			contours11.push_back(contours00[i]);
+		}
+	}
+	Mat whiteDirty;
+	imageDirty.copyTo(whiteDirty);
+	drawContours(whiteDirty, contours11, -1, Scalar(255));
+
+	//detect black
+	Mat blackbinary;
+	threshold(imageDirty, blackbinary, 70, 255, THRESH_BINARY_INV);
+
+	dilate(blackbinary, blackbinary, element55);
+	erode(blackbinary, blackbinary, element55);
+	
+	vector<vector<Point>> contours22, contours33;
+	findContours(blackbinary, contours22, CV_RETR_CCOMP, CV_CHAIN_APPROX_NONE);
+	for (int i = 0;i < contours22.size();++i)
+	{
+		if ((contourArea(contours22[i]) > 300) && (contourArea(contours22[i]) < 5000))
+		{
+			contours33.push_back(contours22[i]);
+			contours11.push_back(contours22[i]);
+		}
+	}
+	Mat blackDirty;
+	imageDirty.copyTo(blackDirty);
+	drawContours(blackDirty, contours33, -1, Scalar(0));
+
+
+	Mat maskdirty2(blackDirty.size(), CV_8U, Scalar(0));
+	drawContours(maskdirty2, contours11, -1, Scalar(255), CV_FILLED);
+	for (int i = 0;i < blackDirty.rows;++i)
+	{
+		uchar *ptr1 = dirtyMask2.ptr<uchar>(i);
+		uchar *ptr2 = maskdirty2.ptr<uchar>(i);
+		for (int j = 0;j < blackDirty.cols;++j)
+		{
+			if (ptr1[j] == 0)
+				ptr2[j] == 0;
+		}
+	}
+
+
+	vector<vector<Point>> contours44;
+	findContours(maskdirty2, contours44, CV_RETR_CCOMP, CV_CHAIN_APPROX_NONE);
+
+	float dirtymarks = 0;
+	for (int i = 0;i < contours44.size();++i)
+	{
+		float dirtyarea = contourArea(contours44[i]);
+		if ((dirtyarea > 1800)&& (dirtyarea<80000))
+			dirtymarks += 1;
+		else if (dirtyarea > 900)
+		{
+			dirtymarks += 0.5;
+		}
+		else if (dirtyarea > 500)
+		{
+			dirtymarks += 0.34;
+		}
+		else if (dirtyarea > 200)
+		{
+			dirtymarks += 0.25;
+		}
+	}
+
+
+	if (dirtymarks > 4)
+		dirty_detection_flag = "2";
+	if (surfaceIndex == 2)
+		dirty_detection_flag = "1";
+
+	return dirty_detection_flag;
+}
+
+
 
 cv::Mat detect2d::preProcess(cv::Mat inputImage)
 {
