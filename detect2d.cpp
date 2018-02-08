@@ -69,7 +69,7 @@ string detect2d::scratchCheck(cv::Mat image, cv::Mat& silkModel2d, vector<vector
 	adpModel = silkMask(image2, edgeMask, adpROI);
 	imshow("adpModel0", imageTemp);
 	imwrite("D:/661model0.jpg", imageTemp);
-	imshow("adpModel", adpModel);
+	//imshow("adpModel", adpModel);
 	imwrite("D:/661model.jpg", adpModel);
 	adpModel.copyTo(silkModel2d);
 	//waitKey();
@@ -81,13 +81,13 @@ string detect2d::scratchCheck(cv::Mat image, cv::Mat& silkModel2d, vector<vector
 	bitwise_or(imageBlack, adpModel, adpModel);
 	bitwise_not(adpModel, adpModel);
 	bitwise_and(Mask, adpModel, Mask);
-	imshow("Cut the silk", Mask);
+	//imshow("Cut the silk", Mask);
 	imwrite("D:/663cutModel.jpg", Mask);
 
 	//Cut the edge
 	bitwise_and(Mask, edgeMask, Mask);
 	//edgeCut(Mask);
-	imshow("Cut the edge", Mask);
+	//imshow("Cut the edge", Mask);
 	imwrite("D:/664cutEdge.jpg", Mask);
 
 	//Outstand the defect
@@ -131,9 +131,10 @@ string detect2d::scratchCheck(cv::Mat image, cv::Mat& silkModel2d, vector<vector
 	dirtyID = dirtyDetect(adpModelTemp, imageScratch, imageDirty);
 	cout << "Result ID for dirty detection: " << dirtyID << ". (1 for OK,2 for NG)" << endl;
 
-	waitKey(0);
+	string errorID = edgeID + blackID + liquidID + alID + scratchID + dirtyID;
+	cout << "Error ID for 2D is: " << errorID << endl;
 
-	string errorID = liquidID + alID + blackID + scratchID + edgeID + dirtyID;
+	waitKey(0);
 	return errorID;
 }
 
@@ -237,8 +238,8 @@ string detect2d::edgeDetect(cv::Mat inputImage, cv::Mat edgeMask)
 	Mat elementAo = getStructuringElement(MORPH_RECT, Size(2, 2));
 	dilate(adpEdge, adpEdge, elementAo);
 	//erode(adpEdge, adpEdge, elementAo);
-	namedWindow("adpEdge", CV_WINDOW_NORMAL);
-	imshow("adpEdge", adpEdge);
+	//namedWindow("adpEdge", CV_WINDOW_NORMAL);
+	//imshow("adpEdge", adpEdge);
 
 	//Cut the wrong hole exactly on the outer edge
 	Mat outerEdgeMask;
@@ -368,7 +369,7 @@ cv::Mat detect2d::silkMask(cv::Mat inputImage, cv::Mat edgeMask, cv::Mat adpROI)
 
 	////save and show
 	//imshow("erode&dilate0", erode2);
-	imshow("erode&dilate", dilate3);
+	//imshow("erode&dilate", dilate3);
 	//imwrite("D:/111/2erode&dilate.jpg", dilate3);
 
 	//3.choose right ROI
@@ -561,11 +562,11 @@ string detect2d::liquidDetect(cv::Mat origin, cv::Mat inputImage, vector<vector<
 
 string detect2d::alDetect(cv::Mat origin, cv::Mat inputImage, vector<vector<Point>>& contoursAl)
 {
-	string resultID = "2";
+	string resultID = "1";
 	Mat elementAl = getStructuringElement(MORPH_RECT, Size(3, 3));
 	erode(inputImage, inputImage, elementAl);
 	//dilate(InputImage, InputImage, elementAl);
-	imshow("Al0", inputImage);
+	//imshow("Al0", inputImage);
 	//imwrite("F:/Al.jpg", inputImage);
 
 	vector<vector<Point>> contours;
@@ -866,13 +867,17 @@ string detect2d::dirtyDetect(cv::Mat adpModel, cv::Mat imageScratch, cv::Mat ima
 	}
 
 
-	vector<vector<Point>> contours44;
+	vector<vector<Point>> contours44, contoursDirty;
 	findContours(maskdirty2, contours44, CV_RETR_CCOMP, CV_CHAIN_APPROX_NONE);
 
-	float dirtymarks = 0;
+	double dirtymarks = 0;
 	for (int i = 0;i < contours44.size();++i)
 	{
 		float dirtyarea = contourArea(contours44[i]);
+		if (dirtyarea > 200)
+		{
+			contoursDirty.push_back(contours44[i]);
+		}
 		if ((dirtyarea > 1800)&& (dirtyarea<80000))
 			dirtymarks += 1;
 		else if (dirtyarea > 900)
@@ -889,6 +894,9 @@ string detect2d::dirtyDetect(cv::Mat adpModel, cv::Mat imageScratch, cv::Mat ima
 		}
 	}
 
+	//Show the Dirty
+	drawContours(imageDirty, contoursDirty, -1, Scalar(255), FILLED);
+	imshow("Dirty", imageDirty);
 
 	if (dirtymarks > 4)
 		dirty_detection_flag = "2";
