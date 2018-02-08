@@ -359,7 +359,7 @@ cv::Mat gamaTest(Mat img)
 }
 
 
-int detect3d::check3d(cv::Mat depthImage,cv::Mat silk2D)
+int detect3d::check3d(cv::Mat depthImage,cv::Mat silk2D, vector<vector<Point>>& contoursAl, vector<vector<Point>>& contoursLiquid)
 {
 	Mat canny, blackMask,grad_x,grad_y,abs_grad_x,abs_grad_y,dst,lapalace,abs_lapalace,canny1,imginter,imgunion,seedgrow;
 	/*imshow("Src", depthImage);*/
@@ -463,20 +463,20 @@ int detect3d::check3d(cv::Mat depthImage,cv::Mat silk2D)
 	rectangle(seedgrow, Point(0, 0), Point(10, seedgrow.rows), Scalar(255, 255, 255), CV_FILLED, 8, 0);
 	rectangle(seedgrow, Point(0, seedgrow.rows-10), Point(seedgrow.cols, seedgrow.rows), Scalar(255, 255, 255), CV_FILLED, 8, 0);
 	rectangle(seedgrow, Point(seedgrow.cols-10, 0), Point(seedgrow.cols, seedgrow.rows), Scalar(255, 255, 255), CV_FILLED, 8, 0);
-	/*imshow("seed", seedgrow);*/
+	imshow("seed", seedgrow);
 	int x1[20]; int y1[20]; int area1[20]; int length1[20]; int depth1[20]; int num; int xmax[20]; int ymax[20]; int depthmin[20];
 	judge(depthImage,seedgrow, x1, y1,xmax,ymax,area1, length1, depth1,depthmin,num);
 	int j = 1;
 	return j;
 }
 
-int detect3d::errorReport(cv::Mat imgdepthVert, cv::Mat imgdepthHor, cv::Mat silk2D)
+int detect3d::errorReport(cv::Mat imgdepthVert, cv::Mat imgdepthHor, cv::Mat silk2D, vector<vector<Point>>& contoursAl, vector<vector<Point>>& contoursLiquid)
 {
 	int report;
 	report = Flatulence.flatulenceCheck(imgdepthVert, 127, 2.3, 240, 35);
 	report = Flatulence.flatulenceCheck(imgdepthHor, 127, 2.3, 240, 35);
-	check3d(imgdepthVert, silk2D);
-	check3d(imgdepthHor, silk2D);
+	check3d(imgdepthVert, silk2D, contoursAl, contoursLiquid);
+	check3d(imgdepthHor, silk2D, contoursAl, contoursLiquid);
 	return report;
 }
 

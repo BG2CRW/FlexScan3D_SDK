@@ -24,7 +24,7 @@ cv::Mat imgdepthVert;
 cv::Mat imgdepthHor;
 cv::Mat imageBasler;
 char path3D_prefix[]= "D:/Data/3D/";
-char path2D_prefix[] = "D:/Data/EdgePoint/";
+char path2D_prefix[] = "D:/Data/2D/";
 char path_suffix[] = ".jpg";
 char path_3DHor_suffix[] = "_Hor.jpg";
 char path_3DVert_suffix[] = "_Vert.jpg";
@@ -232,7 +232,7 @@ int main(int argc, char* argv[])
 #ifdef READ
 		cv::Mat imgdepthVert = cv::imread(strPath3DVert, 0);
 		cv::Mat imgdepthHor = cv::imread(strPath3DHor, 0);
-		//int error3D = Detect3d.errorReport(imgdepthVert, imgdepthHor, silkModel2d);
+		int error3D = Detect3d.errorReport(imgdepthVert, imgdepthHor, silkModel2d,contoursAl,contoursLiquid);
 #endif
 	}
 	return 0;
