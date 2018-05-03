@@ -1,107 +1,13 @@
-
+//预处理：滤波+canny
 #include "flatulence.hpp"
 #include "detect3d.hpp"
 #define DEBUG 1
 #define PI 3.1415926  
-#include <vector>
-#include <stack>
 
 class flatulence Flatulence;
 
 using namespace std;
 using namespace cv;
-
-/***************************************************************************************
-
-***************************************************************************************/
-Mat RegionGrow(Mat src, Point2i pt, int th)
-{
-	Point2i ptGrowing;                      
-	int nGrowLable = 0;                             
-	int nSrcValue = 0;                            
-	int nCurValue = 0;                              
-	Mat matDst;// = Mat::zeros(src.size(), CV_8UC1);  
-	src.copyTo(matDst);
-													
-	int DIR[8][2] = { { -1,-1 },{ 0,-1 },{ 1,-1 },{ 1,0 },{ 1,1 },{ 0,1 },{ -1,1 },{ -1,0 } };
-	vector<Point2i> vcGrowPt;                    
-	vcGrowPt.push_back(pt);                         
-	matDst.at<uchar>(pt.y, pt.x) = 255;               
-	nSrcValue = src.at<uchar>(pt.y, pt.x);            
-
-	while (!vcGrowPt.empty())                       
-	{
-		pt = vcGrowPt.back();                       
-		vcGrowPt.pop_back();
-
-		
-		for (int i = 0; i<9; ++i)
-		{
-			ptGrowing.x = pt.x + DIR[i][0];
-			ptGrowing.y = pt.y + DIR[i][1];
-			
-			if (ptGrowing.x < 0 || ptGrowing.y < 0 || ptGrowing.x >(src.cols - 1) || (ptGrowing.y > src.rows - 1))
-				continue;
-
-			nGrowLable = matDst.at<uchar>(ptGrowing.y, ptGrowing.x);      
-			if (nGrowLable == 0)                    
-			{
-				nCurValue = src.at<uchar>(ptGrowing.y, ptGrowing.x);
-				if (abs(nSrcValue - nCurValue) < th)                 
-				{
-					matDst.at<uchar>(ptGrowing.y, ptGrowing.x) = 255;    
-					vcGrowPt.push_back(ptGrowing);                  
-				}
-			}
-		}
-	}
-	return matDst.clone();
-}
-
-Mat RegionGrow1(Mat src, Point2i pt, int th)
-{
-	Point2i ptGrowing;                      
-	int nGrowLable = 0;                            
-	int nSrcValue = 0;                              
-	int nCurValue = 0;                              
-	Mat matDst = Mat::zeros(src.size(), CV_8UC1);   
-	src.copyTo(matDst);
-
-	int DIR[8][2] = { { -1,-1 },{ 0,-1 },{ 1,-1 },{ 1,0 },{ 1,1 },{ 0,1 },{ -1,1 },{ -1,0 } };
-	vector<Point2i> vcGrowPt;                    
-	vcGrowPt.push_back(pt);                        
-	matDst.at<uchar>(pt.y, pt.x) = 255;             
-	nSrcValue = src.at<uchar>(pt.y, pt.x);          
-
-	while (!vcGrowPt.empty())                     
-	{
-		pt = vcGrowPt.back();                     
-		vcGrowPt.pop_back();
-
-		
-		for (int i = 0; i<9; ++i)
-		{
-			ptGrowing.x = pt.x + DIR[i][0];
-			ptGrowing.y = pt.y + DIR[i][1];
-			  
-			if (ptGrowing.x < 0 || ptGrowing.y < 0 || ptGrowing.x >(src.cols - 1) || (ptGrowing.y > src.rows - 1))
-				continue;
-
-			nGrowLable = matDst.at<uchar>(ptGrowing.y, ptGrowing.x);    
-
-			if (nGrowLable == 0)                 
-			{
-				nCurValue = src.at<uchar>(ptGrowing.y, ptGrowing.x);
-				if (abs(nSrcValue - nCurValue) < th)              
-				{
-					matDst.at<uchar>(ptGrowing.y, ptGrowing.x) = 255;    
-					vcGrowPt.push_back(ptGrowing);                
-				}
-			}
-		}
-	}
-	return matDst.clone();
-}
 
 void detect3d::findModel(cv::Mat depthImage,string path,Point* matchLocation,float threshold)
 {
@@ -151,7 +57,6 @@ void detect3d::findModel(cv::Mat depthImage,string path,Point* matchLocation,flo
 	if( g_nMatchMethod  == CV_TM_CCORR || g_nMatchMethod == CV_TM_CCORR_NORMED|| \
 		 g_nMatchMethod == CV_TM_CCOEFF|| g_nMatchMethod == CV_TM_CCOEFF_NORMED) 
 	{   
-		cout << "maxvalue: " << maxValue << endl;
 		if(maxValue>threshold)
 			rectangle( g_srcImage, matchLocation[0],matchLocation[1],Scalar(0,0,255), 2, 8, 0 );  
 		else
@@ -165,16 +70,22 @@ void detect3d::findModel(cv::Mat depthImage,string path,Point* matchLocation,flo
 
 void detect3d::makeMask(cv::Mat depthImage,cv::Mat erodeBinary, cv::Mat silk2D,int threshold,int erodeTimes)
 {
-	int flag = 0;
-	int face;
 	cv::Mat src;
 	cv::Mat image2D, image3D;
 	double scale, tempx, tempy, x2D,  y2D, x3D, y3D;
 	scale = 1.35;
+	Point matchLocation_2Drecycle[2];
 	Point matchLocation_2Dapple[2];
+	Point matchLocation_2Derror[2];
+	Point matchLocation_3Drecycle[2];
 	Point matchLocation_3Dapple[2];
-	string path_2Derror = "D:/model/model_2Drerror.jpg";
-	string path_2Dapple = "D:/model/model_2Dapple.jpg";
+	Point matchLocation_3Derror[2];
+	string path_3Drecycle = "D:/model/model_recycle.png";
+	string path_3Derror = "D:/model/model_error.png";
+	string path_3Dapple = "D:/model/model_apple.png";
+	string path_2Drecycle = "D:/model/model_2Drecycle.png";
+	string path_2Derror = "D:/model/model_2Derror.png";
+	string path_2Dapple = "D:/model/model_2Dapple.png";
 	depthImage.copyTo(src);
 
 	for (int i = 0; i<src.rows; i++)
@@ -190,57 +101,19 @@ void detect3d::makeMask(cv::Mat depthImage,cv::Mat erodeBinary, cv::Mat silk2D,i
 	//imshow("erode",erodeBinary);
 	silk2D.copyTo(image2D);
 	depthImage.copyTo(image3D);
-	findModel(image2D, path_2Dapple, matchLocation_2Dapple, 0.8);
-	if (matchLocation_2Dapple[0].x != 0)
-	{
-		/*cout << "Apple face" << endl;
-		cout << "matchLocation_2Dapple" << matchLocation_2Dapple[0].x << endl;*/
-		face = 0;
-		flag = findlogo(image3D, face, matchLocation_3Dapple);
-	}
-	else
-	{
-		findModel(image2D, path_2Derror, matchLocation_2Dapple, 0.8);
-		/*cout << "Error face" << endl;
-		cout << "matchLocation_2Dapple:  " << matchLocation_2Dapple[0].x<< endl;*/
-		face = 1;
-		flag = findlogo(image3D, face, matchLocation_3Dapple);
-	}
-
-	/*findModel(image2D, path_2Dapple, matchLocation_2Dapple, 0.4);
-	findModel(image3D, path_3Dapple1, matchLocation_3Dapple, 0.8);*/
-	/*if (matchLocation_3Dapple[0].x == 0)
-	{
-		cout << "matchLocation1: " << matchLocation_3Dapple[0].x << endl;
-		findModel(image3D, path_3Dapple2, matchLocation_3Dapple, 0.8);
-		if (matchLocation_3Dapple[0].x == 0)
-		{
-			cout << "matchLocation2: " << matchLocation_3Dapple[0].x << endl;
-			findModel(image3D, path_3Derror2, matchLocation_3Dapple, 0.4);
-			findModel(image2D, path_2Derror, matchLocation_2Dapple, 0.8);
-			cout << "matchLocation2.2: " << matchLocation_3Dapple[0].x << endl;
-			if (matchLocation_3Dapple[0].x == 0)
-			{
-				cout << "matchLocation3: " << matchLocation_3Dapple[0].x << endl;
-				findModel(image3D, path_3Derror1, matchLocation_3Dapple, 0.4);
-				if (matchLocation_3Dapple[0].x == 0)
-				{
-					flag = 1;
-				}
-			}
-		}
-	}*/
+	cv::imshow("1", image3D);
+	waitKey();
+	findModel(image2D, path_2Dapple, matchLocation_2Dapple, 0.4);
+	findModel(image3D, path_3Dapple, matchLocation_3Dapple, 0.4);
 	resize(image2D, image2D, Size(image2D.cols / scale, image2D.rows / scale), 0, 0, INTER_LINEAR);
 	matchLocation_2Dapple[0].x /= scale;
 	matchLocation_2Dapple[0].y /= scale;
 	matchLocation_2Dapple[1].x /= scale;
 	matchLocation_2Dapple[1].y /= scale;
-	if (flag != 1)
-	{
-	x2D = matchLocation_2Dapple[0].x;
+    x2D = matchLocation_2Dapple[0].x;
 	y2D = matchLocation_2Dapple[0].y;
-	/*rectangle(image2D, matchLocation_2Dapple[0], matchLocation_2Dapple[1], Scalar(255, 255, 255), 2, 8, 0);
-	rectangle(image3D, matchLocation_3Dapple[0], matchLocation_3Dapple[1], Scalar(0, 0, 255), 2, 8, 0);*/
+	rectangle(image2D, matchLocation_2Dapple[0], matchLocation_2Dapple[1], Scalar(255, 255, 255), 2, 8, 0);
+	rectangle(image3D, matchLocation_3Dapple[0], matchLocation_3Dapple[1], Scalar(0, 0, 255), 2, 8, 0);
 	/*rectangle(erodeBinary, matchLocation_2Dapple[0], matchLocation_2Dapple[1], Scalar(0, 0, 255), 2, 8, 0);*/
 	/*image2D = 255 - image2D;
 	rectangle(image2D, matchLocation_2Dapple[0], matchLocation_2Dapple[1], Scalar(0, 0, 255), 2, 8, 0);
@@ -250,22 +123,17 @@ void detect3d::makeMask(cv::Mat depthImage,cv::Mat erodeBinary, cv::Mat silk2D,i
 	x3D = matchLocation_3Dapple[0].x;
 	y3D = matchLocation_3Dapple[0].y;
 	//image2D = 255 - image2D;
-	/*cv::imshow("image2D2", image2D);
+	cv::imshow("image2D2", image2D);
 	cv::imshow("image3D2", image3D);
-	waitKey();*/
-	for (int i = 0; i < src.rows; i++)
+	waitKey();
+	for (int i = 0; i<src.rows; i++)
+	{
+		for (int j = 0; j<src.cols; j++)
 		{
-			for (int j = 0; j < src.cols; j++)
-			{
-				tempx = i - y3D + y2D;
-				tempy = j - x3D + x2D;
-				if (tempx < 0 ||tempy < 0|| tempx > image2D.rows|| tempy > image2D.cols)
-				{
-					break;
-				}
-				if (image2D.at<uchar>(tempx, tempy) > 50)
-					src.at<uchar>(i, j) = 0;
-			}
+			tempx = i - y3D + y2D;
+			tempy = j - x3D + x2D;
+			if (image2D.at<uchar>(tempx, tempy) > 50)
+				src.at<uchar>(i, j) = 0;
 		}
 	}
 	Mat element = getStructuringElement(0, Size(2 * erodeTimes + 1, 2 * erodeTimes + 1), Point(erodeTimes, erodeTimes));
@@ -317,67 +185,37 @@ void ConnectEdge(Mat src)
 		}
 	}
 }
-cv::Mat gamaTest(Mat img)
 
+int detect3d::check3d(cv::Mat depthImage,cv::Mat silk2D)
 {
 
-	imshow("原始图像", img);
-	Mat imgGamma;
-	img.copyTo(imgGamma);
+	int id = 0;
+	int classify[1];
+	int inv[1];
+	int pos[1];
+	Point matchLocation[2];
+	Mat pic, pic_inv;
+	int type=0;//0:big battery,1:small battery
 
-	for (int i = 0; i < img.rows; i++)
-	{
-		for (int j = 0; j < img.cols; j++)
-		{
-			if (img.at<int>(i, j) == 0)
-			{
-				img.at<int>(i, j) = 127;
-			}
-
-			imgGamma.at<int>(i, j) = (img.at<int>(i, j) - 127) * 3 + 127;
-		}
-
-	}
-
-	//归一化
-
-	normalize(imgGamma, imgGamma, 0, 255, CV_MINMAX);
-
-	//转换为8 bit图像显示
-
-	convertScaleAbs(imgGamma, imgGamma);
-
-	//imshow("伽马增强效果", imgGamma);
-	//waitKey();
-	return imgGamma;
-}
-
-
-int detect3d::check3d(cv::Mat depthImage,cv::Mat silk2D, vector<vector<Point>>& contoursAl, vector<vector<Point>>& contoursLiquid)
-{
-	Mat canny, blackMask,grad_x,grad_y,abs_grad_x,abs_grad_y,dst,lapalace,abs_lapalace,canny1,imginter,imgunion,seedgrow;
-	/*imshow("Src", depthImage);*/
-	/*depthImage = gamaTest(depthImage);
-	imshow("gamaTest", depthImage);
-	waitKey();*/
+	depthImage.copyTo(pic);
+	Mat filterImage, canny, erodeImg, maskErode, blackMask,grad_x,grad_y,abs_grad_x,abs_grad_y,dst,lapalace,abs_lapalace,canny1;
 	depthImage.copyTo(blackMask);
-	//imshow("gamaTest2", blackMask);
-	makeMask(depthImage, blackMask, silk2D, 5, 4);
-	/*imshow("blackMask",blackMask);*/
+	makeMask(depthImage, blackMask, silk2D, 5, 5);
+	imshow("blackMask",blackMask);
 
 	Sobel(depthImage, grad_x, CV_16S, 0, 1, 3, 1, 1, BORDER_DEFAULT);
 	convertScaleAbs(grad_x, abs_grad_x);
-	/*imshow("x direction Sobel", abs_grad_x);*/
+	imshow("x direction Sobel", abs_grad_x);
 
 	Sobel(depthImage, grad_y, CV_16S, 1, 0, 3, 1, 1, BORDER_DEFAULT);
 	convertScaleAbs(grad_y, abs_grad_y);
-	/*imshow("y direction Sobel", abs_grad_y);*/
+	imshow("y direction Sobel", abs_grad_y);
 
 	addWeighted(abs_grad_x, 0.5, abs_grad_y, 0.5, 0, dst);
-	/*imshow("all direction Sobel", dst);*/
+	imshow("all direction Sobel", dst);
 
 	Canny(depthImage, canny1, 10, 110, 3);
-	/*imshow("canny1",canny1);*/
+	//imshow("canny1",canny1);
 	dst.copyTo(canny);
 
 	for(int i = 0; i<canny.rows; i++)
@@ -390,294 +228,140 @@ int detect3d::check3d(cv::Mat depthImage,cv::Mat silk2D, vector<vector<Point>>& 
 				canny.at<uchar>(i, j) = 0;
 		}
 	}
-	//imshow("thresold", canny);
-	Mat element = getStructuringElement(MORPH_RECT, Size(1, 1), Point(-1, -1));
-	Mat Mask;
-	erode(255 - canny, Mask, element);
-	erode(Mask, Mask, element);
-	/*imshow("Mask", Mask);*/
-	Mask.copyTo(imginter);
-	Mask.copyTo(imgunion);
+	imshow("dst", canny);
 
-	for (int i = 0; i<Mask.rows; i++)
-	{
-		for (int j = 0; j<Mask.cols; j++)
-		{
- 			imgunion.at<uchar>(i, j) = Mask.at<uchar>(i, j) / 255 * blackMask.at<uchar>(i, j);
-		}
-	}
-	//imgunion = 255 - imgunion;
-	/*imshow("imgunion", imgunion);*/
-
-	Point2i seed;
-	//seed.x = 1;
-	//seed.y = 1;
+/*
 	for (int i = 0; i<canny.rows; i++)
 	{
 		for (int j = 0; j<canny.cols; j++)
 		{
-			if (Mask.at<uchar>(i, j) == 0 && blackMask.at<uchar>(i, j) == 0)
-			{
-				imginter.at<uchar>(i, j) = 0;
-				seed.x = j; 
-				seed.y = i;
-				imgunion = RegionGrow(imgunion, seed, 10);
-			}
-			else
-			{
-				imginter.at<uchar>(i, j) = 255;
-			}
+			canny.at<uchar>(i, j) *= (blackMask.at<uchar>(i, j) / 255);
 		}
 	}
-	/*imshow("imginter", imginter);
-	imshow("seedgrow", imgunion);*/
-	imgunion.copyTo(seedgrow);
+*/	
+	//imshow("filter",filterImage);
+	imshow("canny",canny);
+
+	Mat element = getStructuringElement(MORPH_RECT, Size(1, 1), Point(-1, -1));
+	Mat Mask;
+	erode(255 - canny, Mask, element);
+	imshow("Mask", Mask);
+	//waitKey();
 	ConnectEdge(Mask);
-	Mat dep1;
-	depthImage.copyTo(dep1);
-	for (int i = 0; i<seedgrow.rows; i++)
-	{
-		for (int j = 0; j<seedgrow.cols; j++)
-		{
-			if (seedgrow.at<uchar>(i, j) == 0 )
-			{
-				seed.x = j;
-				seed.y = i;
-				dep1 = RegionGrow1(dep1, seed, 0);
-			}
-		}
-	}
-	/*imshow("hua", dep1);*/
-
-	Mat element1 = getStructuringElement(MORPH_RECT, Size(5, 5), Point(-1, -1));
-	erode(seedgrow, seedgrow, element1);
-	dilate(seedgrow, seedgrow, element1);
-	/*imshow("seedgrowerode", seedgrow);*/
-	rectangle(seedgrow, Point(0, 0), Point(seedgrow.cols, 10), Scalar(255, 255, 255), CV_FILLED, 8, 0);
-	rectangle(seedgrow, Point(0, 0), Point(10, seedgrow.rows), Scalar(255, 255, 255), CV_FILLED, 8, 0);
-	rectangle(seedgrow, Point(0, seedgrow.rows-10), Point(seedgrow.cols, seedgrow.rows), Scalar(255, 255, 255), CV_FILLED, 8, 0);
-	rectangle(seedgrow, Point(seedgrow.cols-10, 0), Point(seedgrow.cols, seedgrow.rows), Scalar(255, 255, 255), CV_FILLED, 8, 0);
-	imshow("seed", seedgrow);
-	int x1[200]; int y1[200]; int area1[200]; int length1[200]; int depth1[200]; int num; int xmax[200]; int ymax[200]; int depthmin[200];
-	judge(depthImage,seedgrow, x1, y1,xmax,ymax,area1, length1, depth1,depthmin,num);
-	int j = 1;
-	return j;
-}
-
-int detect3d::errorReport(cv::Mat imgdepthVert, cv::Mat imgdepthHor, cv::Mat silk2D, vector<vector<Point>>& contoursAl, vector<vector<Point>>& contoursLiquid)
-{
-	int report;
-	report = Flatulence.flatulenceCheck(imgdepthVert, 127, 2.3, 240, 35);
-	report = Flatulence.flatulenceCheck(imgdepthHor, 127, 2.3, 240, 35);
-	check3d(imgdepthVert, silk2D, contoursAl, contoursLiquid);
-	check3d(imgdepthHor, silk2D, contoursAl, contoursLiquid);
-	return report;
-}
-
-int detect3d::findlogo(cv::Mat image3D, int face, Point* matchLocation_3Dapple)
-{
-	int couter = 0;
-	FILE* fh;
-	char path_3Dapple[200], path_3Derror[200], str0[2];
-	char path_3Dappleprix[] = "D:/model/model_apple";
-	char path_3Derrorprix[] = "D:/model/model_error";
-	char path_suffix[] = ".jpg";
-	sprintf(str0, "%2d", couter);
-	sprintf(path_3Dapple, "%s%s%s", path_3Dappleprix, str0, path_suffix);
-	sprintf(path_3Derror, "%s%s%s", path_3Derrorprix, str0, path_suffix);
-
-	if (face == 0)	//Apple face
-	{
-		while (1)
-		{
-			couter++;
-			sprintf(str0, "%d", couter);
-			sprintf(path_3Dapple, "%s%s%s", path_3Dappleprix, str0, path_suffix);
-			fh = fopen(path_3Dapple, "r");
-			if (fh == NULL)
-			{
-				std::cout << "can not open this file" << endl;
-				return 1;
-			}
-			else
-			{
-				findModel(image3D, path_3Dapple, matchLocation_3Dapple, 0.6);
-				if (matchLocation_3Dapple[0].x != 0)
-				{
-					cout << "in: " << matchLocation_3Dapple[0].x << " " << matchLocation_3Dapple[0].y << endl;
-					return 0;
-				}
-			}
-		}
-	}
-
-	if (face == 1)   //Error face
-	{
-		while (1)
-		{
-			couter++;
-			sprintf(str0, "%d", couter);
-			sprintf(path_3Derror, "%s%s%s", path_3Derrorprix, str0, path_suffix);
-			fh = fopen(path_3Derror, "r");
-			if (fh != NULL)
-			{
-				findModel(image3D, path_3Derror, matchLocation_3Dapple, 0.6);
-				if (matchLocation_3Dapple[0].x != 0)
-				{
-					cout << "in: " << matchLocation_3Dapple[0].x << " " << matchLocation_3Dapple[0].y << endl;
-					return 0;
-				}
-			}
-			else
-			{
-				std::cout << "can not open this file" << endl;
-				return 1;
-			}
-		}
-	}
-}
-void detect3d::judge(cv::Mat src,cv::Mat image, int* x, int* y, int* xmax,int* ymax,int* area, int* length, int *depthmax, int* depthmin, int& num)
-{
-	cv::Mat seedgrow;
-	image.copyTo(seedgrow);
+	imshow("Mask1", Mask);
 	vector<vector<Point> > contours;
-	vector<vector<Point> > contours1;
 	vector<Vec4i> hierarchy;
-	findContours(seedgrow, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(-1, -1));
-	Mat drawing = Mat::zeros(seedgrow.size(), CV_8U);
+	findContours(Mask, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(-1, -1));
+	Mat drawing = Mat::zeros(Mask.size(), CV_8U);
 	int j = 0;
 	for (int i = 0; i < contours.size(); i++)
 	{
 		Moments moms = moments(Mat(contours[i]));
 		double area = moms.m00;    //零阶矩即为二值图像的面积  double area = moms.m00;  
 								   //如果面积超出了设定的范围，则不再考虑该斑点  
+
 		if (area > 27 && area < 10000)
 		{
 			drawContours(drawing, contours, i, Scalar(255), FILLED, 8, hierarchy, 0, Point());
 			j = j + 1;
+
 		}
 	}
 
+	for (int i = 0; i<drawing.rows; i++)
+	{
+		for (int j = 0; j<drawing.cols; j++)
+		{
+			drawing.at<uchar>(i, j) *= (blackMask.at<uchar>(i, j) / 255);
+		}
+	}
 	cv::Mat element15(3, 3, CV_8U, cv::Scalar(1));
 	cv::Mat close;
 	cv::morphologyEx(drawing, close, cv::MORPH_CLOSE, element15);
-	/*imshow("drawing", drawing);*/
+	imshow("drawing", drawing);
 	//waitKey();
-	findContours(close, contours1, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(-1, -1));
+	vector<vector<Point> > contours1;
 	vector<Vec4i> hierarchy1;
-	vector<Point2f> mc(contours1.size());//center of mass
-	vector<Moments> mu(contours1.size());
+	findContours(close, contours1, hierarchy1, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+	//imshow("close", close);
+	j = 0;
+	int m = 0;
 	for (int i = 0; i < contours1.size(); i++)
 	{
-		mu[i] = moments(contours1[i], false);
-	}
-	cv::Mat zeroimg;
-	/*findContours(close, contours1, hierarchy1, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));*/
-	/*imshow("close", close);*/
-	num = contours1.size();
-	for (int i = 0; i < contours1.size(); i++)
-	{
-		zeroimg = Mat::zeros(close.size(), CV_8U);
-		drawContours(zeroimg, contours1, i, Scalar(255, 255, 255), FILLED, 8, hierarchy1, 0, Point());
 		Moments moms = moments(Mat(contours1[i]));
-		area[i] = moms.m00; 
-		length[i]=arcLength(contours1[i], true);
-		mc[i] = Point2d(mu[i].m10 / mu[i].m00, mu[i].m01 / mu[i].m00);
-		x[i] = mc[i].x;
-		y[i] = mc[i].y;
-		int depthmax1 = 0;
-		int depthmin1 = 255;
-		int tempx = 0;
-		int tempy = 0;
-		for (int i = 0; i<zeroimg.rows; i++)
+		double area = moms.m00;    //零阶矩即为二值图像的面积  double area = moms.m00;  
+								   //如果面积超出了设定的范围，则不再考虑该斑点  
+
+		double area1 = contourArea(contours1[i]);
+		if (area >27 && area < 100000)
 		{
-			for (int j = 0; j<zeroimg.cols; j++)
-			{
-				if (zeroimg.at<uchar>(i, j)==255)
-				{ 
-					if (src.at<uchar>(i, j) > depthmax1)
-					{
-						depthmax1 = src.at<uchar>(i, j);
-						tempx = i;
-						tempy = j;
-					}
-					if (src.at<uchar>(i, j) < depthmin1)
-					{
-						depthmin1 = src.at<uchar>(i, j);
-					}
-				}
-			}
+			drawContours(depthImage, contours1, i, Scalar(0, 0, 255), FILLED, 8, hierarchy1, 0, Point());
+			j = j + 1;
+
 		}
-		xmax[i] = tempx;
-		ymax[i] = tempy;
-		depthmax[i] = depthmax1;
-		depthmin[i] = depthmin1;
+		else if (area >= 0 && area <= 27)
+		{
+			drawContours(depthImage, contours1, i, Scalar(255, 0, 0), FILLED, 8, hierarchy1, 0, Point());
+			m = m + 1;
+		}
 	}
 
-	for (int i = 0; i < num; i++)
+	char t[256];
+	cout << j << endl;
+
+	imshow("漏洞", depthImage);
+	waitKey();
+	drawing.copyTo(depthImage);
+	
+
+	return j;
+}
+
+void detect3d::FCNImge(cv::Mat imgFCN) {
+
+	Mat element1 = getStructuringElement(MORPH_RECT, Size(3, 3));
+	cv::Mat img_erosion_right, img_dilation_right, bi_thre_right, img_binary_right;
+	erode(imgFCN, img_erosion_right, element1);
+	dilate(img_erosion_right, img_dilation_right, element1);
+	threshold(img_dilation_right, img_binary_right, 40, 255, THRESH_BINARY);
+
+	//Find the damages
+	vector<vector<Point>> contours;
+	vector<vector<Point>> contoursvalue; 
+	vector<Vec4i> hierarchy;
+	findContours(img_binary_right, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+	
+	vector<double> length;
+	for (int i = 0; i < contours.size(); i++)
 	{
-		if (x[i] < 950)
+		Moments moms = moments(Mat(contours[i]));
+		double area = moms.m00;
+		double templength = arcLength(contours[i], true);    //compute the perimeter
+
+		if (area > 40 )	//choose right area
 		{
-			if (depthmax[i] - depthmin[i] > 20)
-			{
-				drawContours(src, contours1, i, Scalar(0, 0, 255), FILLED, 8, hierarchy1, 0, Point());;
-				cout << "The " << i + 1 << "th " << "X: " << x[i] << " Y: " << y[i] << " length: " << length[i] << " area: " << area[i] << " maxdepth: " << depthmax[i] << " mindepth: " << depthmin[i] << endl;
-				if (area[i] > 300)
-				{
-					cout << "NG!" << endl;
-			    }
-				double r = length[i] / (2 * 3.1415);
-				if (3.1415 * r * r > 1.8 * area[i])
-				{
-					cout << "It is a scratch!" << endl;
-				}
-				else
-				{
-					cout << "It is a convex/concave point!" << endl;
-				}
-			}
+			//cout << "are: " << area << endl;
 			
-		}
+				contoursvalue.push_back(contours[i]);
+				length.push_back(templength);
+
+				//cout << "The area: " << area << " and templength: " << templength << endl;
+			}
 	}
-	imshow("result", src);
-	/*imshow("zeroimg", zeroimg);*/
-	//j = 0;
-	//int m = 0;
-	//int resultID = 0;
-	//for (int i = 0; i < contours1.size(); i++)
-	//{
-	//	Moments moms = moments(Mat(contours1[i]));
-	//	double area = moms.m00;    //零阶矩即为二值图像的面积  double area = moms.m00;  
-	//	double templength = arcLength(contours[i], true);   //如果面积超出了设定的范围，则不再考虑该斑点  
+	for (int i = 0; i < contoursvalue.size(); i++)
+	{
+		drawContours(imgFCN, contoursvalue, i, Scalar(0), FILLED, 8, hierarchy, 0, Point());
+	}
 
-	//	double area1 = contourArea(contours1[i]);
-	//	if (area > 500)
-	//	{
-	//		resultID++;
-	//	}
-	//	if (area >27 && area < 100000)
-	//	{
-	//		drawContours(depthImage, contours1, i, Scalar(0, 0, 255), FILLED, 8, hierarchy1, 0, Point());
-	//		length.push_back(templength);
-	//		cout << "The " << i << "th scratch Length: " << templength / 2 << "  th area: " << area << endl;
-	//		j = j + 1;
+}
 
-	//	}
-	//	else if (area >= 0 && area <= 27)
-	//	{
-	//		drawContours(depthImage, contours1, i, Scalar(255, 0, 0), FILLED, 8, hierarchy1, 0, Point());
-	//		cout << "The " << i << "th dot Length: " << templength / 2 << "  th area: " << area << endl;
-	//		m = m + 1;
-	//	}
-	//}
-	//if (resultID)
-	//{
-	//	cout << "NG" << endl;
-	//}
-	//char t[256];
-	//cout << j << endl;
-	//imshow("Result", depthImage);
-	//waitKey();
-	//drawing.copyTo(depthImage);
+int detect3d::errorReport(cv::Mat imgdepthVert, cv::Mat imgdepthHor, cv::Mat silk2D)
+{
+	int report;
+	report = Flatulence.flatulenceCheck(imgdepthVert, 127, 2.3, 240, 35);
+	report = Flatulence.flatulenceCheck(imgdepthHor, 127, 2.3, 240, 35);
+	//check3d(imgdepthVert, silk2D);
+	check3d(imgdepthHor, silk2D);
+	return report;
 }
 

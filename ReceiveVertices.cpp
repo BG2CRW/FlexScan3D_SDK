@@ -8,7 +8,16 @@
 #include <iostream>  
 #include <boost/timer.hpp>
 #include "opencv2/opencv.hpp"
-#include <string>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include "opencv2\highgui.hpp"
+#include "opencv\cv.h"
+#include "opencv2\core.hpp"
+#include <math.h>
+#include "SocketMatTransmissionClient.h"
+
+
 // Include files to use the PYLON API.
 #include "pylon\PylonIncludes.h"
 #include <pylon\PylonGUI.h>
@@ -28,15 +37,17 @@ char path2D_prefix[] = "D:/Data/2D/";
 char path_suffix[] = ".jpg";
 char path_3DHor_suffix[] = "_Hor.jpg";
 char path_3DVert_suffix[] = "_Vert.jpg";
-int counter = 30;
+int counter = 0;
 int errorReport;
+SocketMatTransmissionClient client;
 int main(int argc, char* argv[])
 {
 	
 	while (1)
 	{
 		counter++;
-		cout << "counter:"<<counter << endl;
+		//counter++;
+		std::cout << "counter:"<<counter << endl;
 		char str0[4];
 		sprintf(str0, "%04d", counter);
 		char strPath2D[200], strPath3DVert[200], strPath3DHor[200];
@@ -44,6 +55,7 @@ int main(int argc, char* argv[])
 		sprintf(strPath3DVert, "%s%s%s", path3D_prefix, str0, path_3DVert_suffix);
 		sprintf(strPath3DHor, "%s%s%s", path3D_prefix, str0, path_3DHor_suffix);
 
+		/*
 #ifdef GRAB
 		// The exit code of the sample application.
 		int exitCode = 0;
@@ -95,19 +107,40 @@ int main(int argc, char* argv[])
 		cout << strPath2D << endl;
 		
 
-#endif
+#endif*/
 #ifdef READ
 		cv::Mat img = cv::imread(strPath2D,0);
-		cv::Mat silkModel2d;
+
+		/**********************************************/
+		
+		if (-1 == client.socketConnect("127.0.0.1", 55))
+		{
+			std::cout << "connect failed" << endl;
+		}
+
+		Mat imageReceive;
+	
+		int open = 0;//0:open,1:close
+		client.transmit(img, open);
+		imageReceive = client.get();
+		client.socketDisconnect();
+		cv::imshow("clientReceive", imageReceive);
+		cv:waitKey();
+	
+		/*********************************************/
+
+		/*cv::Mat silkModel2d;
 		vector<vector<Point>> contoursAl, contoursLiquid;
-		//cout << contoursLiquid.size() << " and " << contoursAl.size() << endl;
+		std::cout << contoursAl.size() << " and " << contoursLiquid.size() << endl;
 		string error2D = Detect2d.scratchCheck(img, silkModel2d, contoursAl, contoursLiquid);
-		//cout << "Error ID for 2D is: " << error2D << endl;
-		cout << contoursLiquid.size() << " and " << contoursAl.size() << endl;
+		std::cout << "Error ID for 2D is: " << error2D << endl;
+		std::cout << contoursAl.size() << " and " << contoursLiquid.size() << endl;
+
+		*/
 		//imwrite("D:/silkModel2d.jpg", silkModel2d);
 		//imshow("silkModel2d", silkModel2d);
 #endif
-
+		/*
 #ifdef GRAB
 		
 		for (int i = 0; i < 2; i++)
@@ -232,9 +265,10 @@ int main(int argc, char* argv[])
 #ifdef READ
 		cv::Mat imgdepthVert = cv::imread(strPath3DVert, 0);
 		cv::Mat imgdepthHor = cv::imread(strPath3DHor, 0);
-		int error3D = Detect3d.errorReport(imgdepthVert, imgdepthHor, silkModel2d,contoursAl,contoursLiquid);
-#endif
+		//int error3D = Detect3d.errorReport(imgdepthVert, imgdepthHor, silkModel2d);
+#endif*/
 	}
+	
 	return 0;
 }
 

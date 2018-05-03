@@ -10,11 +10,9 @@ class detect3d
 {
 public:
 	void makeMask(cv::Mat depthImage, cv::Mat erodeBinary, cv::Mat silk2D,int threshold, int erodeTimes);
-	int check3d(cv::Mat depthImage, cv::Mat silk2D, vector<vector<Point>>& contoursAl, vector<vector<Point>>& contoursLiquid);
+	int check3d(cv::Mat depthImage, cv::Mat silk2D);
 	void findModel(cv::Mat depthImage,string path,Point* matchLocation,float threshold);
-	int errorReport(cv::Mat imgdepthVert, cv::Mat imgdepthHor, cv::Mat silk2D, vector<vector<Point>>& contoursAl, vector<vector<Point>>& contoursLiquid);
-	int findlogo(cv::Mat image3D, int face, Point *matchLocation_3Dapple);
-	void judge(cv::Mat src, cv::Mat image, int* x, int* y, int* xmax, int* ymax, int* area, int* length, int *depthmax,int* depthmin, int& num);
-
+	int errorReport(cv::Mat imgdepthVert, cv::Mat imgdepthHor, cv::Mat silk2D);
+	void FCNImge(cv::Mat imgFCN);
 };
 #endif

@@ -63,13 +63,13 @@ string detect2d::scratchCheck(cv::Mat image, cv::Mat& silkModel2d, vector<vector
 	//adaptiveThreshold(adpROI, adpROI, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY_INV, 1000 * 2 + 1, 8);
 	//Mat elementAdp = getStructuringElement(MORPH_RECT, Size(6, 6));
 	//dilate(adpROI, adpROI, elementAdp);
-	//////imshow("One step adp", adpROI);
+	////imshow("One step adp", adpROI);
 	////imwrite("D:/661modeladp.jpg", adpROI);
 	//Model Make
 	adpModel = silkMask(image2, edgeMask, adpROI);
 	imshow("adpModel0", imageTemp);
 	imwrite("D:/661model0.jpg", imageTemp);
-	//imshow("adpModel", adpModel);
+	imshow("adpModel", adpModel);
 	imwrite("D:/661model.jpg", adpModel);
 	adpModel.copyTo(silkModel2d);
 	//waitKey();
@@ -81,13 +81,13 @@ string detect2d::scratchCheck(cv::Mat image, cv::Mat& silkModel2d, vector<vector
 	bitwise_or(imageBlack, adpModel, adpModel);
 	bitwise_not(adpModel, adpModel);
 	bitwise_and(Mask, adpModel, Mask);
-	//imshow("Cut the silk", Mask);
+	imshow("Cut the silk", Mask);
 	imwrite("D:/663cutModel.jpg", Mask);
 
 	//Cut the edge
 	bitwise_and(Mask, edgeMask, Mask);
 	//edgeCut(Mask);
-	//imshow("Cut the edge", Mask);
+	imshow("Cut the edge", Mask);
 	imwrite("D:/664cutEdge.jpg", Mask);
 
 	//Outstand the defect
@@ -131,10 +131,9 @@ string detect2d::scratchCheck(cv::Mat image, cv::Mat& silkModel2d, vector<vector
 	dirtyID = dirtyDetect(adpModelTemp, imageScratch, imageDirty);
 	cout << "Result ID for dirty detection: " << dirtyID << ". (1 for OK,2 for NG)" << endl;
 
-	string errorID = edgeID + blackID + liquidID + alID + scratchID + dirtyID;
-	cout << "Error ID for 2D is: " << errorID << endl;
-
 	waitKey(0);
+
+	string errorID = liquidID + alID + blackID + scratchID + edgeID + dirtyID;
 	return errorID;
 }
 
@@ -188,7 +187,7 @@ cv::Mat detect2d::edgeMake(cv::Mat origin)
 	//3.get the annular edge
 	bitwise_and(origin, innerMask, origin);
 	bitwise_and(origin, edgeMask, origin);
-	////imshow("Annular Edge", origin);
+	//imshow("Annular Edge", origin);
 
 	//4.reverse the model
 	//bitwise_not(innerEdge, innerEdge);
@@ -238,8 +237,8 @@ string detect2d::edgeDetect(cv::Mat inputImage, cv::Mat edgeMask)
 	Mat elementAo = getStructuringElement(MORPH_RECT, Size(2, 2));
 	dilate(adpEdge, adpEdge, elementAo);
 	//erode(adpEdge, adpEdge, elementAo);
-	//namedWindow("adpEdge", CV_WINDOW_NORMAL);
-	//imshow("adpEdge", adpEdge);
+	namedWindow("adpEdge", CV_WINDOW_NORMAL);
+	imshow("adpEdge", adpEdge);
 
 	//Cut the wrong hole exactly on the outer edge
 	Mat outerEdgeMask;
@@ -352,7 +351,7 @@ cv::Mat detect2d::silkMask(cv::Mat inputImage, cv::Mat edgeMask, cv::Mat adpROI)
 	//adaptiveThreshold(img, binary, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY_INV, 1000 * 2 + 1, 8);
 	//1.2.Set the ROI
 	bitwise_and(binary, edgeMask, binary);
-	////imshow("Binary", binary);
+	//imshow("Binary", binary);
 
 	//2.erode and dilate
 	Mat dilate1, erode1, dilate2, erode2, dilate3;
@@ -369,7 +368,7 @@ cv::Mat detect2d::silkMask(cv::Mat inputImage, cv::Mat edgeMask, cv::Mat adpROI)
 
 	////save and show
 	//imshow("erode&dilate0", erode2);
-	//imshow("erode&dilate", dilate3);
+	imshow("erode&dilate", dilate3);
 	//imwrite("D:/111/2erode&dilate.jpg", dilate3);
 
 	//3.choose right ROI
@@ -436,7 +435,7 @@ cv::Mat detect2d::silkMask(cv::Mat inputImage, cv::Mat edgeMask, cv::Mat adpROI)
 		//erode(printing, printing, elementP25);
 		dilate(printing, printing, elementP5);
 
-		////imshow("priting", printing);
+		//imshow("priting", printing);
 
 		bitwise_or(ContoursMast, printing, ContoursMast);
 	}
@@ -490,16 +489,16 @@ cv::Mat detect2d::silkMask(cv::Mat inputImage, cv::Mat edgeMask, cv::Mat adpROI)
 
 	////4.2show and save
 	//cvNamedWindow("ROI", WINDOW_NORMAL);
-	////imshow("ROI", ContoursMast);
+	//imshow("ROI", ContoursMast);
 	//imwrite("D:/111/ROI.jpg", ContoursMast);
 	//cvNamedWindow("ROIImg", WINDOW_NORMAL);
-	////imshow("ROIImg", RoiImg);
+	//imshow("ROIImg", RoiImg);
 	//imwrite("D:/111/ROIImg.jpg", RoiImg);
 	//cvNamedWindow("ROIImg1", WINDOW_NORMAL);
-	////imshow("ROIImg1", ROIImg1);
+	//imshow("ROIImg1", ROIImg1);
 	//imwrite("D:/111/ROIImg1.jpg", ROIImg1);
 	//cvNamedWindow("ROIImg2", WINDOW_NORMAL);
-	////imshow("ROIImg2", ROIImg2);
+	//imshow("ROIImg2", ROIImg2);
 	//imwrite("D:/111/ROIImg2.jpg", ROIImg2);
 
 	//waitKey();
@@ -514,7 +513,7 @@ string detect2d::liquidDetect(cv::Mat origin, cv::Mat inputImage, vector<vector<
 	Mat element44 = getStructuringElement(MORPH_RECT, Size(10, 10));
 	erode(inputImage, inputImage, element33);
 	dilate(inputImage, inputImage, element44);
-	////imshow("liquid0", inputImage);
+	//imshow("liquid0", inputImage);
 
 	//Find the damages
 	vector<vector<Point>> contours;
@@ -562,11 +561,11 @@ string detect2d::liquidDetect(cv::Mat origin, cv::Mat inputImage, vector<vector<
 
 string detect2d::alDetect(cv::Mat origin, cv::Mat inputImage, vector<vector<Point>>& contoursAl)
 {
-	string resultID = "1";
+	string resultID = "2";
 	Mat elementAl = getStructuringElement(MORPH_RECT, Size(3, 3));
 	erode(inputImage, inputImage, elementAl);
 	//dilate(InputImage, InputImage, elementAl);
-	////imshow("Al0", inputImage);
+	imshow("Al0", inputImage);
 	//imwrite("F:/Al.jpg", inputImage);
 
 	vector<vector<Point>> contours;
@@ -662,11 +661,11 @@ string detect2d::scratchDetect(cv::Mat origin, cv::Mat inputImage)
 	Mat element88 = getStructuringElement(MORPH_RECT, Size(6, 6));
 	Mat element55 = getStructuringElement(MORPH_RECT, Size(3, 3));
 	erode(inputImage, inputImage, element33);
-	////imshow("scratch000", inputImage);
+	//imshow("scratch000", inputImage);
 	dilate(inputImage, inputImage, element88);
-	////imshow("scratch00", inputImage);
+	//imshow("scratch00", inputImage);
 	erode(inputImage, inputImage, element55);
-	////imshow("scratch0", inputImage);
+	//imshow("scratch0", inputImage);
 	//imwrite("F://Scratch.jpg", inputImage);
 
 	//Find the damages
@@ -777,7 +776,7 @@ void detect2d::showDefect(cv::Mat finalShow, cv::Mat inputImage)
 	//	}
 	//}
 
-	//imshow("drawing image", finalShow);
+	imshow("drawing image", finalShow);
 	imwrite("D:/666final.jpg", finalShow);
 }
 
@@ -829,15 +828,17 @@ string detect2d::dirtyDetect(cv::Mat adpModel, cv::Mat imageScratch, cv::Mat ima
 	}
 	Mat whiteDirty;
 	imageDirty.copyTo(whiteDirty);
-	drawContours(whiteDirty, contours11, -1, Scalar(255));
+	drawContours(whiteDirty, contours11, -1, Scalar(0));
+	imwrite("D:/白色脏污结果.jpg", whiteDirty);
 
-	//detect black
+	//黑色脏污
 	Mat blackbinary;
-	threshold(imageDirty, blackbinary, 70, 255, THRESH_BINARY_INV);
-
+	threshold(imageDirty, blackbinary, 95, 255, THRESH_BINARY_INV);
+	//adaptiveThreshold(imageDirty, blackbinary, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY_INV, 51, 40);
+	//imwrite("D:/黑色脏污原模型.jpg", imageDirty);
 	dilate(blackbinary, blackbinary, element55);
 	erode(blackbinary, blackbinary, element55);
-	
+	//imwrite("D:/黑色脏污二值化.jpg", blackbinary);
 	vector<vector<Point>> contours22, contours33;
 	findContours(blackbinary, contours22, CV_RETR_CCOMP, CV_CHAIN_APPROX_NONE);
 	for (int i = 0;i < contours22.size();++i)
@@ -851,6 +852,7 @@ string detect2d::dirtyDetect(cv::Mat adpModel, cv::Mat imageScratch, cv::Mat ima
 	Mat blackDirty;
 	imageDirty.copyTo(blackDirty);
 	drawContours(blackDirty, contours33, -1, Scalar(0));
+	imwrite("D:/黑色脏污结果.jpg", blackDirty);
 
 
 	Mat maskdirty2(blackDirty.size(), CV_8U, Scalar(0));
@@ -862,22 +864,19 @@ string detect2d::dirtyDetect(cv::Mat adpModel, cv::Mat imageScratch, cv::Mat ima
 		for (int j = 0;j < blackDirty.cols;++j)
 		{
 			if (ptr1[j] == 0)
-				ptr2[j] = 0;
+				ptr2[j] == 0;
 		}
 	}
 
 
-	vector<vector<Point>> contours44, contoursDirty;
+	vector<vector<Point>> contours44;
 	findContours(maskdirty2, contours44, CV_RETR_CCOMP, CV_CHAIN_APPROX_NONE);
 
-	double dirtymarks = 0;
+	float dirtymarks = 0;
 	for (int i = 0;i < contours44.size();++i)
 	{
-		double dirtyarea = contourArea(contours44[i]);
-		if (dirtyarea > 200)
-		{
-			contoursDirty.push_back(contours44[i]);
-		}
+		//cout << "轮廓面积" <<i<<"："<< contourArea(contours44[i]) << endl;
+		float dirtyarea = contourArea(contours44[i]);
 		if ((dirtyarea > 1800)&& (dirtyarea<80000))
 			dirtymarks += 1;
 		else if (dirtyarea > 900)
@@ -894,12 +893,11 @@ string detect2d::dirtyDetect(cv::Mat adpModel, cv::Mat imageScratch, cv::Mat ima
 		}
 	}
 
-	//Show the Dirty
-	drawContours(imageDirty, contoursDirty, -1, Scalar(255), FILLED);
-	imshow("Dirty", imageDirty);
 
 	if (dirtymarks > 4)
 		dirty_detection_flag = "2";
+	cout << "轮廓44个数：" << contours44.size() << endl;
+	cout << "脏污检测：" << dirtymarks << endl;
 	if (surfaceIndex == 2)
 		dirty_detection_flag = "1";
 
@@ -913,13 +911,13 @@ cv::Mat detect2d::preProcess(cv::Mat inputImage)
 	cv::Mat canny, Mask;
 	/*
 	namedWindow("Canny");
-	//imshow("Canny", image2);
+	imshow("Canny", image2);
 	int valueCanny = 0;
 	createTrackbar("pos", "Canny", &valueCanny, 300, onChangeTrackBarCanny, &image2);
 	waitKey();
 	*/
 	Canny(inputImage, canny, 30, 77);
-	////imshow("canny",canny);
+	//imshow("canny",canny);
 	for (int j = 0; j<inputImage.rows; j++)
 	{
 		uchar* data = inputImage.ptr<uchar>(j);
@@ -930,16 +928,16 @@ cv::Mat detect2d::preProcess(cv::Mat inputImage)
 	}
 	/*
 	namedWindow("dyn_threshold");
-	//imshow("dyn_threshold", inputImage);
+	imshow("dyn_threshold", inputImage);
 	int value = 0;
 	createTrackbar("pos", "dyn_threshold", &value, 30, onChangeTrackBar, &inputImage);
 	waitKey();
 	*/
 	adaptiveThreshold(inputImage, Mask, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY_INV, 6 * 2 + 1, 8);
-	////imshow("Mask", Mask);
+	//imshow("Mask", Mask);
 
 	bitwise_or(Mask, canny, Mask);
-	////imshow("Mask2", Mask);
+	//imshow("Mask2", Mask);
 	imwrite("D:/662preHandle.jpg", Mask);
 
 	return Mask;
@@ -952,7 +950,7 @@ void onChangeTrackBar(int pos, void* data)
 	cv::Mat dstImage;
 	//cv::threshold(srcImage, dstImage, pos, 255, 0);
 	adaptiveThreshold(srcImage, dstImage, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY_INV, pos * 2 + 1, 8);
-	//cv:://imshow("dyn_threshold", dstImage);
+	cv::imshow("dyn_threshold", dstImage);
 }
 void onChangeTrackBarCanny(int pos, void* data)
 {
@@ -960,5 +958,5 @@ void onChangeTrackBarCanny(int pos, void* data)
 	cv::Mat srcImage = *(cv::Mat*)(data);
 	cv::Mat canny;
 	cv::Canny(srcImage, canny, pos, 77);
-	//cv:://imshow("Canny", canny);
+	cv::imshow("Canny", canny);
 }
