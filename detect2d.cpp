@@ -4,6 +4,7 @@
 using namespace std;
 using namespace cv;
 
+
 void onChangeTrackBar(int pos, void* data);
 void onChangeTrackBarCanny(int pos, void* data);
 
@@ -941,6 +942,43 @@ cv::Mat detect2d::preProcess(cv::Mat inputImage)
 	imwrite("D:/662preHandle.jpg", Mask);
 
 	return Mask;
+}
+
+void pitsdetect( cv::Mat imgFCN, ::Mat img) {
+
+	Mat element1 = getStructuringElement(MORPH_RECT, Size(3, 3));
+	cv::Mat img_erosion_right, img_dilation_right, bi_thre_right, img_binary_right;
+	erode(imgFCN, img_erosion_right, element1);
+	dilate(img_erosion_right, img_dilation_right, element1);
+	threshold(img_dilation_right, img_binary_right, 40, 255, THRESH_BINARY);
+
+	//Find the damages
+	vector<vector<Point>> contours;
+	vector<vector<Point>> contoursvalue;
+	vector<Vec4i> hierarchy;
+	findContours(img_binary_right, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+
+	vector<double> length;
+	int numofpits = 0;
+	for (int i = 0; i < contours.size(); i++)
+	{
+		double area = contourArea(contours[i]);
+
+		if (area > 40)	//choose right area
+		{
+			Rect rect = boundingRect(contours[i]);//检测外轮廓  
+			rectangle(img, rect, Scalar(0, 0, 0), 3);//对外轮廓加矩形框
+			numofpits++;
+		}
+	}
+	imshow("pits display", img);
+
+	std::cout << "numbers of pits is:"<< numofpits << endl;
+	if (numofpits > 3)
+		std::cout << "pits NG!" << endl;
+	else
+		std::cout << "pits OK!" << endl;
+
 }
 
 void onChangeTrackBar(int pos, void* data)

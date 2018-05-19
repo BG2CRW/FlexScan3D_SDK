@@ -40,13 +40,34 @@ char path_3DVert_suffix[] = "_Vert.jpg";
 int counter = 0;
 int errorReport;
 SocketMatTransmissionClient client;
+
+void socketFCN(cv::Mat img)
+{
+	if (-1 == client.socketConnect("127.0.0.1", 55))
+	{
+		std::cout << "connect failed" << endl;
+	}
+
+	Mat imageReceive;
+
+	int open = 0;//0:open,1:close
+	client.transmit(img, open);
+	imageReceive = client.get();
+	client.socketDisconnect();
+	cv::imshow("clientReceive", imageReceive);
+	pitsdetect(imageReceive, img);
+	cv::waitKey();
+
+}
+
+
+
 int main(int argc, char* argv[])
 {
 	
 	while (1)
 	{
 		counter++;
-		//counter++;
 		std::cout << "counter:"<<counter << endl;
 		char str0[4];
 		sprintf(str0, "%04d", counter);
@@ -111,32 +132,19 @@ int main(int argc, char* argv[])
 #ifdef READ
 		cv::Mat img = cv::imread(strPath2D,0);
 
-		/**********************************************/
-		
-		if (-1 == client.socketConnect("127.0.0.1", 55))
-		{
-			std::cout << "connect failed" << endl;
-		}
 
-		Mat imageReceive;
-	
-		int open = 0;//0:open,1:close
-		client.transmit(img, open);
-		imageReceive = client.get();
-		client.socketDisconnect();
-		cv::imshow("clientReceive", imageReceive);
-		cv:waitKey();
-	
-		/*********************************************/
+		//socket and aokeng detect
+		socketFCN(img);
 
-		/*cv::Mat silkModel2d;
+
+		cv::Mat silkModel2d;
 		vector<vector<Point>> contoursAl, contoursLiquid;
 		std::cout << contoursAl.size() << " and " << contoursLiquid.size() << endl;
 		string error2D = Detect2d.scratchCheck(img, silkModel2d, contoursAl, contoursLiquid);
 		std::cout << "Error ID for 2D is: " << error2D << endl;
 		std::cout << contoursAl.size() << " and " << contoursLiquid.size() << endl;
 
-		*/
+		
 		//imwrite("D:/silkModel2d.jpg", silkModel2d);
 		//imshow("silkModel2d", silkModel2d);
 #endif

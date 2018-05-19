@@ -14,6 +14,8 @@
 using namespace cv;
 using namespace std;
 
+void pitsdetect(cv::Mat imgFCN, ::Mat img);
+
 class detect2d
 {
 private:
@@ -25,6 +27,7 @@ private:
 	cv::Mat edgeMake(cv::Mat origin);
 	
 	void showDefect(cv::Mat finalShow, cv::Mat inputImage);
+
 
 	string edgeDetect(cv::Mat inputImage, cv::Mat edgeMask);
 	string blackDetect(cv::Mat inputImage, cv::Mat edgeMask);
