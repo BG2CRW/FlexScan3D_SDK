@@ -317,7 +317,7 @@ int detect3d::check3d(cv::Mat depthImage,cv::Mat silk2D)
 	return j;
 }
 
-void detect3d::FCNImge(cv::Mat imgFCN) {
+cv::Mat detect3d::FCNImge(cv::Mat src,cv::Mat imgFCN) {
 
 	Mat element1 = getStructuringElement(MORPH_RECT, Size(3, 3));
 	cv::Mat img_erosion_right, img_dilation_right, bi_thre_right, img_binary_right;
@@ -352,6 +352,7 @@ void detect3d::FCNImge(cv::Mat imgFCN) {
 	{
 		drawContours(imgFCN, contoursvalue, i, Scalar(0), FILLED, 8, hierarchy, 0, Point());
 	}
+	return imgFCN;
 
 }
 

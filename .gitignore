@@ -1,0 +1,6 @@
+*.pyc
+*.jpg
+network_2d/model
+network_3d/model
+network_2d/logs
+network_3d/logs
