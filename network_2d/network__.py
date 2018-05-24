@@ -137,7 +137,7 @@ class Network():
 
 		with tf.variable_scope(name):
 			weights = self.__get_deconv_filter(name, f_shape=[strides_xy*2,strides_xy*2,out_channels,out_channels])
-			upscore = tf.nn.conv2d_transpose(bottom, weights, 
+			upscore = tf.nn.conv2d_transpose(bottom, weights,
 											 [tf.shape(bottom)[0],out_height,out_width,out_channels],
 											 [1,strides_xy,strides_xy,1], padding='SAME', data_format='NHWC', name=None)
 
@@ -181,7 +181,7 @@ class Network():
 											  reuse=False):
 		with tf.variable_scope(name):
 			batch_norm = tf.contrib.layers.batch_norm(bottom,
-													  decay=momentum, 
+													  decay=momentum,
 													  epsilon=epsilon,
 													  scale=scale,
 													  is_training=trainable,
@@ -204,7 +204,7 @@ class Network():
 			if reuse:
 				scope.reuse_variables()
 			batch_norm = tf.contrib.layers.batch_norm(bottom,
-													  decay=momentum, 
+													  decay=momentum,
 													  epsilon=epsilon,
 													  scale=scale,
 													  is_training=trainable,
@@ -239,7 +239,7 @@ class Network():
 
 
 	def _softmax_cross_entropy_with_logits(self, y, prediction):
-		logits = tf.nn.softmax_cross_entropy_with_logits(labels=y, 
+		logits = tf.nn.softmax_cross_entropy_with_logits(labels=y,
 														 logits=prediction,
 														 name="softmax_cross_entropy")
 
