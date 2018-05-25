@@ -317,20 +317,15 @@ int detect3d::check3d(cv::Mat depthImage,cv::Mat silk2D)
 	return j;
 }
 
-cv::Mat detect3d::FCNImge(cv::Mat src,cv::Mat imgFCN) {
-
-	Mat element1 = getStructuringElement(MORPH_RECT, Size(3, 3));
-	cv::Mat img_erosion_right, img_dilation_right, bi_thre_right, img_binary_right;
-	erode(imgFCN, img_erosion_right, element1);
-	dilate(img_erosion_right, img_dilation_right, element1);
-	threshold(img_dilation_right, img_binary_right, 40, 255, THRESH_BINARY);
-
+cv::Mat detect3d::drawResult(cv::Mat src,cv::Mat imgFCN)
+{
 	//Find the damages
 	vector<vector<Point>> contours;
 	vector<vector<Point>> contoursvalue; 
 	vector<Vec4i> hierarchy;
-	findContours(img_binary_right, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
-	
+	Mat image1 = imgFCN.clone();
+	Mat newsrc = src.clone();
+	findContours(image1, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
 	vector<double> length;
 	for (int i = 0; i < contours.size(); i++)
 	{
@@ -341,7 +336,7 @@ cv::Mat detect3d::FCNImge(cv::Mat src,cv::Mat imgFCN) {
 		if (area > 40 )	//choose right area
 		{
 			//cout << "are: " << area << endl;
-			
+			 
 				contoursvalue.push_back(contours[i]);
 				length.push_back(templength);
 
@@ -350,9 +345,10 @@ cv::Mat detect3d::FCNImge(cv::Mat src,cv::Mat imgFCN) {
 	}
 	for (int i = 0; i < contoursvalue.size(); i++)
 	{
-		drawContours(imgFCN, contoursvalue, i, Scalar(0), FILLED, 8, hierarchy, 0, Point());
+		drawContours(newsrc, contoursvalue, i, Scalar(0), 1, 8, hierarchy, 0, Point());
 	}
-	return imgFCN;
+	cv::imshow("result", newsrc);
+	return newsrc;
 
 }
 

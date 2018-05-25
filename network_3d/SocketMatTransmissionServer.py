@@ -8,7 +8,7 @@ import random
 from PIL import Image
 import scipy
 import struct
-BUFFER_SIZE_LIMIT = 1930000
+BUFFER_SIZE_LIMIT = 19300000
 
 def socketConnect(port):
 	sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM) 

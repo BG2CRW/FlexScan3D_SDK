@@ -68,11 +68,9 @@ cv::Mat socket3D(cv::Mat img)
 		std::cout << "connect failed" << endl;
 	}
 
-	Mat imageReceive;
-
 	int open = 0;//0:open,1:close
 	client.transmit(img, open);
-	imageReceive = client.get();
+	cv::Mat imageReceive = client.get();
 	client.socketDisconnect();
 	return imageReceive;
 
@@ -80,11 +78,11 @@ cv::Mat socket3D(cv::Mat img)
 
 int main(int argc, char* argv[])
 {
-	
+
 	while (1)
 	{
 		counter++;
-		std::cout << "counter:"<<counter << endl;
+		std::cout << "counter:" << counter << endl;
 		char str0[4];
 		sprintf(str0, "%04d", counter);
 		char strPath2D[200], strPath3DVert[200], strPath3DHor[200];
@@ -95,14 +93,14 @@ int main(int argc, char* argv[])
 #ifdef GRAB
 		// The exit code of the sample application.
 		int exitCode = 0;
-		
+
 		// Before using any pylon methods, the pylon runtime must be initialized. 
 		PylonInitialize();
 		cout << "Please put a side of the next battery in basler!" << endl;
 		getchar();
 		try
 		{
-			
+
 			CInstantCamera camera(CTlFactory::GetInstance().CreateFirstDevice());// Create an instant camera object with the camera device found first.
 			//cout << "Using device " << camera.GetDeviceInfo().GetModelName() << endl;// Print the model name of the camera.
 			camera.MaxNumBuffer = 5;
@@ -114,7 +112,7 @@ int main(int argc, char* argv[])
 			if (ptrGrabResult->GrabSucceeded())// Image grabbed successfully?
 			{
 				// Access the image data.
-				cout << "SizeX: " << ptrGrabResult->GetWidth()<< "SizeY: " << ptrGrabResult->GetHeight() << endl;
+				cout << "SizeX: " << ptrGrabResult->GetWidth() << "SizeY: " << ptrGrabResult->GetHeight() << endl;
 				const uint8_t *pImageBuffer = (uint8_t *)ptrGrabResult->GetBuffer();
 				//cout << "Gray value of first pixel: " << (uint32_t)pImageBuffer[0] << endl << endl;
 
@@ -128,8 +126,8 @@ int main(int argc, char* argv[])
 			{
 				cout << "Error: " << ptrGrabResult->GetErrorCode() << " " << ptrGrabResult->GetErrorDescription() << endl;
 			}
-			
-			
+
+
 		}
 		catch (const GenericException &e)
 		{
@@ -141,31 +139,31 @@ int main(int argc, char* argv[])
 		// Releases all pylon resources. 
 		PylonTerminate();
 		cout << strPath2D << endl;
-		
+
 
 #endif
 #ifdef READ
-/*		cv::Mat img = cv::imread(strPath2D,0);
+		/*		cv::Mat img = cv::imread(strPath2D,0);
 
 
-		//socket and aokeng detect
-		socketFCN(img);
+				//socket and aokeng detect
+				socketFCN(img);
 
 
-		cv::Mat silkModel2d;
-		vector<vector<Point>> contoursAl, contoursLiquid;
-		std::cout << contoursAl.size() << " and " << contoursLiquid.size() << endl;
-		string error2D = Detect2d.scratchCheck(img, silkModel2d, contoursAl, contoursLiquid);
-		std::cout << "Error ID for 2D is: " << error2D << endl;
-		std::cout << contoursAl.size() << " and " << contoursLiquid.size() << endl;
-		*/
-		
-		//imwrite("D:/silkModel2d.jpg", silkModel2d);
-		//imshow("silkModel2d", silkModel2d);
+				cv::Mat silkModel2d;
+				vector<vector<Point>> contoursAl, contoursLiquid;
+				std::cout << contoursAl.size() << " and " << contoursLiquid.size() << endl;
+				string error2D = Detect2d.scratchCheck(img, silkModel2d, contoursAl, contoursLiquid);
+				std::cout << "Error ID for 2D is: " << error2D << endl;
+				std::cout << contoursAl.size() << " and " << contoursLiquid.size() << endl;
+				*/
+
+				//imwrite("D:/silkModel2d.jpg", silkModel2d);
+				//imshow("silkModel2d", silkModel2d);
 #endif
-		
+
 #ifdef GRAB
-		
+
 		for (int i = 0; i < 2; i++)
 		{
 			const char* pathToFlexScan3D = "C:\\Program Files\\LMI Technologies\\FlexScan3D 3.3\\App\\FlexScan3D.exe";
@@ -289,16 +287,17 @@ int main(int argc, char* argv[])
 		cout << strPath3DVert << endl;
 		cv::Mat imgdepthVert = cv::imread(strPath3DVert, 0);
 		cv::Mat output_Vert = socket3D(imgdepthVert);
-		cv::Mat result_Vert=Detect3d.FCNImge(imgdepthVert,output_Vert);
+		cv::Mat result_Vert = Detect3d.drawResult(imgdepthVert, output_Vert);
 
 
 		cv::Mat imgdepthHor = cv::imread(strPath3DHor, 0);
 		cv::Mat output_Hor = socket3D(imgdepthHor);
-		cv::Mat result_Hor = Detect3d.FCNImge(imgdepthHor,output_Hor);
+		cv::Mat result_Hor = Detect3d.drawResult(imgdepthHor, output_Hor);
 
 		cv::imshow("aa", result_Vert);
 		cv::imshow("bb", result_Hor);
 		cv::waitKey();
+		
 		//int error3D = Detect3d.errorReport(imgdepthVert, imgdepthHor, silkModel2d);
 #endif
 	}

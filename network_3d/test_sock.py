@@ -41,17 +41,23 @@ with tf.Session() as sess:
 	while True:
 		sockClient,receiveImage,open=server.socketReceive(sock)
 		#cv2.imshow("receiveImage",receiveImage);
+		#cv2.waitKey(0)
 		#test
-
 		img1 = receiveImage.reshape(1, cfg.INPUT_HEIGHT, cfg.INPUT_WIDTH, cfg.INPUT_CHANNEL)#src
 		img_gt1 = receiveImage.reshape(1, cfg.INPUT_HEIGHT, cfg.INPUT_WIDTH, 1)
 		time1=time.clock()
 		img2 = sess.run(model_point.out, feed_dict={model_point.x:img1})
 		time2=time.clock()-time1
 		print(1/time2,".....time")
-
-		sockClient=server.socketSend(sockClient,img2.reshape(cfg.INPUT_HEIGHT, cfg.INPUT_WIDTH))
-		#cv2.waitKey(0)
+		img3=img2[0, 0:, 0:, 0]
+		kernel_point = np.ones((3,3),np.uint8)
+		img_erosion = cv2.erode(img3, kernel_point, iterations = 1)
+		img_dilation = cv2.dilate(img_erosion, kernel_point, iterations = 1)
+		ret, img_binary = cv2.threshold(img_dilation, 100, 255, cv2.THRESH_BINARY)
+		img_binary=img_binary.astype(np.uint8)
+		img3=img3.astype(np.uint8)
+		sockClient=server.socketSend(sockClient,img_binary)
+		
 		if open==1:
 			server.socketDisconnect(sockClient,sock)
 			sys.exit()

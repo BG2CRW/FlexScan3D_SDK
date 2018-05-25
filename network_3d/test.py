@@ -53,6 +53,7 @@ with tf.Session() as sess:
 		avg_loss=avg_loss+loss
 
 		img3 = img2[0, 0:, 0:, 0]
+		print(img3.shape)
 		#np.savetxt('n.txt',img3)
 		cv2.imshow("result",img3)
 

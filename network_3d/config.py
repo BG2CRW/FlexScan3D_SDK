@@ -3,7 +3,7 @@
 #
 import os
 
-TRAIN_OLD_STATUS=True   #true for continue train
+TRAIN_OLD_STATUS=True  #true for continue train
 GPU_NUMBER='0'
 
 INPUT_HEIGHT=1200

@@ -11,7 +11,7 @@
 #pragma comment (lib, "ws2_32.lib") //加载 ws2_32.dll
 
 using namespace cv;
-#define BUFFER_SIZE_LIMIT 1930000
+#define BUFFER_SIZE_LIMIT 19300000
 
 struct sentbuf  
 { 

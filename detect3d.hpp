@@ -13,6 +13,6 @@ public:
 	int check3d(cv::Mat depthImage, cv::Mat silk2D);
 	void findModel(cv::Mat depthImage,string path,Point* matchLocation,float threshold);
 	int errorReport(cv::Mat imgdepthVert, cv::Mat imgdepthHor, cv::Mat silk2D);
-	cv::Mat  FCNImge(cv::Mat src,cv::Mat imgFCN);
+	cv::Mat  drawResult(cv::Mat src,cv::Mat imgFCN);
 };
 #endif
