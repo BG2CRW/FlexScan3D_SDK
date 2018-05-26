@@ -50,21 +50,61 @@ bool Z_AXIS::closeCOM(LPCWSTR COMstr)
 	return CloseHandle(hCom);
 }
 
-int Z_AXIS::reset_z_axis()
+bool Z_AXIS::reset_z_axis()
 {
-
+	int i = 0;
+	while (write(RESET, sizeof(RESET)) != 1)
+	{
+		i++;
+		if (i == 30)
+			return FALSE;
+	}
+	return TRUE;
 }
 
-int Z_AXIS::move_distance(int distance)
+bool Z_AXIS::move_distance(int distance)
 {
+	for (int i = 0; i < distance; i++)
+	{
+		int j = 0;
+		while (write(UP_STEP, sizeof(UP_STEP)) != 1)
+		{
+			j++;
+			if (j == 30)
+				return FALSE;
+		}
+		int k = 0;
+		while (write(SET_ZERO, sizeof(SET_ZERO)) != 1)
+		{
+			k++;
+			if (k == 30)
+				return FALSE;
+		}
 
+	}
+	return TRUE;
 }
-int Z_AXIS::write(char* writebuf)
+int Z_AXIS::write(unsigned char* writebuf,int size)
 {
-
+	LPDWORD length = 0;
+	if (WriteFile(hCom, writebuf, size, length, NULL) == FALSE)
+	{
+		printf("写入串口数据失败\n");
+	}
+	if (read() == 0x06)
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
 }
-char* Z_AXIS::read() 
+int Z_AXIS::read() 
 {
-
+	char buffer[1];
+	DWORD read;
+	ReadFile(hCom, buffer, sizeof(buffer), &read, NULL);
+	return buffer[0];
 }
 

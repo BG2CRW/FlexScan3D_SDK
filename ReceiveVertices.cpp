@@ -8,7 +8,7 @@
 #include <iostream>  
 #include <boost/timer.hpp>
 #include "opencv2/opencv.hpp"
-
+#include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "opencv2\highgui.hpp"
@@ -16,6 +16,7 @@
 #include "opencv2\core.hpp"
 #include <math.h>
 #include "SocketMatTransmissionClient.h"
+#include "z_axis.h"
 
 
 // Include files to use the PYLON API.
@@ -23,24 +24,26 @@
 #include <pylon\PylonGUI.h>
 #include "config.hpp"
 
-using namespace std;
-using namespace Pylon;
-using namespace cv;
+
 static const uint32_t c_countOfImagesToGrab = 1;
 class detect2d Detect2d;
 class detect3d Detect3d;
+class Z_AXIS Motor;
+class SocketMatTransmissionClient client;
 cv::Mat imgdepthVert;
 cv::Mat imgdepthHor;
 cv::Mat imageBasler;
-char path3D_prefix[]= "D:/vs2015_ws/ScanInterface/examples/c++/ReceiveVertices/src/network_3d/data/newSrc/";
+char path3D_prefix[]= "D:/techonlogy/Project/battery_test/ScanInterface/examples/c++/ReceiveVertices/src/network_3d/data/newSrc/";
 char path2D_prefix[] = "D:/Data/2D/";
 char path_suffix[] = ".jpg";
 char path_3DHor_suffix[] = "_Hor.jpg";
 char path_3DVert_suffix[] = "_Vert.jpg";
 int counter = 0;
 int errorReport;
-SocketMatTransmissionClient client;
 
+using namespace std;
+using namespace Pylon;
+using namespace cv;
 void socket2D(cv::Mat img)
 {
 	if (-1 == client.socketConnect("127.0.0.1", 44))
@@ -78,68 +81,83 @@ cv::Mat socket3D(cv::Mat img)
 
 int main(int argc, char* argv[])
 {
+	if (Motor.openCOM(TEXT("COM7")) == FALSE)
+	{
+		std::cout << "Failed to open serial port" << endl;
+		return 0;
+	}
 
 	while (1)
 	{
 		counter++;
 		std::cout << "counter:" << counter << endl;
-		char str0[4];
-		sprintf(str0, "%04d", counter);
+		char str0[5];
+		sprintf(str0, "%05d", counter);
 		char strPath2D[200], strPath3DVert[200], strPath3DHor[200];
-		sprintf(strPath2D, "%s%s%s", path2D_prefix, str0, path_suffix);
-		sprintf(strPath3DVert, "%s%s%s", path3D_prefix, str0, path_3DVert_suffix);
+		sprintf(strPath2D, "%s%s", path2D_prefix, str0);
+		sprintf(strPath3DVert, "%s%s", path3D_prefix, str0, path_3DVert_suffix);
 		sprintf(strPath3DHor, "%s%s%s", path3D_prefix, str0, path_3DHor_suffix);
 
 #ifdef GRAB
 		// The exit code of the sample application.
 		int exitCode = 0;
-
-		// Before using any pylon methods, the pylon runtime must be initialized. 
-		PylonInitialize();
-		cout << "Please put a side of the next battery in basler!" << endl;
+		if(Motor.reset_z_axis()==FALSE)
+		{
+			std::cout << "Z-axis reset failed!" << endl;
+		}
+		std::cout << "Please put a side of the next battery in basler!" << endl;
 		getchar();
-		try
+		WCHAR dir_name[64];
+		swprintf(dir_name, L"%S", strPath2D);
+		bool flag = CreateDirectory(dir_name, NULL);
+		for (int i = 0; i < 10; i++)
 		{
-
-			CInstantCamera camera(CTlFactory::GetInstance().CreateFirstDevice());// Create an instant camera object with the camera device found first.
-			//cout << "Using device " << camera.GetDeviceInfo().GetModelName() << endl;// Print the model name of the camera.
-			camera.MaxNumBuffer = 5;
-			camera.StartGrabbing(c_countOfImagesToGrab);// Start the grabbing of c_countOfImagesToGrab images.
-			CGrabResultPtr ptrGrabResult;// This smart pointer will receive the grab result data.
-			camera.IsGrabbing();
-			camera.RetrieveResult(5000, ptrGrabResult, TimeoutHandling_ThrowException);// Wait for an image and then retrieve it. A timeout of 5000 ms is used.
-
-			if (ptrGrabResult->GrabSucceeded())// Image grabbed successfully?
+			char strFileName[200];
+			sprintf(strFileName, "%s/%d%s", strPath2D, i, path_suffix);
+			// Before using any pylon methods, the pylon runtime must be initialized. 
+			PylonInitialize();
+			try
 			{
-				// Access the image data.
-				cout << "SizeX: " << ptrGrabResult->GetWidth() << "SizeY: " << ptrGrabResult->GetHeight() << endl;
-				const uint8_t *pImageBuffer = (uint8_t *)ptrGrabResult->GetBuffer();
-				//cout << "Gray value of first pixel: " << (uint32_t)pImageBuffer[0] << endl << endl;
+				CInstantCamera camera(CTlFactory::GetInstance().CreateFirstDevice());// Create an instant camera object with the camera device found first.
+				//cout << "Using device " << camera.GetDeviceInfo().GetModelName() << endl;// Print the model name of the camera.
+				camera.MaxNumBuffer = 5;
+				camera.StartGrabbing(c_countOfImagesToGrab);// Start the grabbing of c_countOfImagesToGrab images.
+				CGrabResultPtr ptrGrabResult;// This smart pointer will receive the grab result data.
+				camera.IsGrabbing();
+				camera.RetrieveResult(5000, ptrGrabResult, TimeoutHandling_ThrowException);// Wait for an image and then retrieve it. A timeout of 5000 ms is used.
 
-				imageBasler = cv::Mat(ptrGrabResult->GetHeight(), ptrGrabResult->GetWidth(), CV_8UC1, (uint8_t *)ptrGrabResult->GetBuffer());
-				cv::imwrite(strPath2D, imageBasler);
+				if (ptrGrabResult->GrabSucceeded())// Image grabbed successfully?
+				{
+					// Access the image data.
+					std::cout << "SizeX: " << ptrGrabResult->GetWidth() << "SizeY: " << ptrGrabResult->GetHeight() << endl;
+					const uint8_t *pImageBuffer = (uint8_t *)ptrGrabResult->GetBuffer();
+					//cout << "Gray value of first pixel: " << (uint32_t)pImageBuffer[0] << endl << endl;
 
-				boost::timer t2;
-				cout << "Time of scratch check: " << t2.elapsed() << endl;
+					imageBasler = cv::Mat(ptrGrabResult->GetHeight(), ptrGrabResult->GetWidth(), CV_8UC1, (uint8_t *)ptrGrabResult->GetBuffer());
+					cv::imwrite(strFileName, imageBasler);
+
+					boost::timer t2;
+					std::cout << "Time of scratch check: " << t2.elapsed() << endl;
+				}
+				else
+				{
+					std::cout << "Error: " << ptrGrabResult->GetErrorCode() << " " << ptrGrabResult->GetErrorDescription() << endl;
+				}
+
+
 			}
-			else
+			catch (const GenericException &e)
 			{
-				cout << "Error: " << ptrGrabResult->GetErrorCode() << " " << ptrGrabResult->GetErrorDescription() << endl;
+				// Error handling.
+				cerr << "An exception occurred." << endl
+					<< e.GetDescription() << endl;
+				exitCode = 1;
 			}
-
-
+			// Releases all pylon resources. 
+			PylonTerminate();
+			std::cout << strFileName << endl;
+			Motor.move_distance(7);
 		}
-		catch (const GenericException &e)
-		{
-			// Error handling.
-			cerr << "An exception occurred." << endl
-				<< e.GetDescription() << endl;
-			exitCode = 1;
-		}
-		// Releases all pylon resources. 
-		PylonTerminate();
-		cout << strPath2D << endl;
-
 
 #endif
 #ifdef READ
