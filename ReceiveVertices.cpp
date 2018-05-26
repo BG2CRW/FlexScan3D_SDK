@@ -163,7 +163,7 @@ int main(int argc, char* argv[])
 #endif
 
 #ifdef GRAB
-
+		/*
 		for (int i = 0; i < 2; i++)
 		{
 			const char* pathToFlexScan3D = "C:\\Program Files\\LMI Technologies\\FlexScan3D 3.3\\App\\FlexScan3D.exe";
@@ -282,6 +282,7 @@ int main(int argc, char* argv[])
 		}
 		cv::imwrite(strPath3DVert, imgdepthVert);
 		cv::imwrite(strPath3DHor, imgdepthHor);
+		*/
 #endif
 #ifdef READ
 		cout << strPath3DVert << endl;
