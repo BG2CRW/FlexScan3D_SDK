@@ -3,8 +3,9 @@
 #
 import os
 
-TRAIN_OLD_STATUS=False   #true for continue train
-GPU_NUMBER='0'
+TRAIN_OLD_STATUS=True   #true for continue train
+OLD_EPOCHS = 200
+GPU_NUMBER='1'
 
 INPUT_HEIGHT=2168  #1200  1422  2168
 INPUT_WIDTH=4096  #1600  2688  4096
@@ -17,13 +18,15 @@ TRAIN_WIDTH=2248
 
 
 BATCH_SIZE=1
-NUM_EPOCHS=10
+NUM_EPOCHS=30
 
 IMAGE_PATH='data/data524/trainSrc'
 LABEL_PATH='data/data524/trainLabel'
 MODEL_PATH='model/data524/scratch.ckpt'
-TEST_PATH='data/scratch519/testSrc'
-TESTLABEL_PATH='data/scratch519/testLabel'
+SAVE_PATH='model/data524'
+#TEST_PATH='data/test'
+TEST_PATH='data/data524/testSrc'
+TESTLABEL_PATH='data/data524/testLabel'
 
-LEARNING_RATE=(1e-3)*0.05
+LEARNING_RATE=(1e-3)*0.5
 

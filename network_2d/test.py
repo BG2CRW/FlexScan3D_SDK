@@ -29,7 +29,7 @@ with tf.Session() as sess:
 	print('Finished reloading param.')
 
 	[train_image, train_label, dir_] = input_data(1)
-	data_num = len(train_image)
+	data_num = len(train_label)
 	avg_loss=0
 
 	sum_edgepoint = 0
@@ -39,14 +39,24 @@ with tf.Session() as sess:
 	sample_loujian = 0
 
 	for k in range(int(data_num)):
+		img1 = np.zeros([1,cfg.INPUT_HEIGHT,cfg.INPUT_WIDTH,cfg.IMAGE_CHANNEL])
+
+		img_origin = cv2.imread(train_image[5*k+1])
 		if cfg.INPUT_CHANNEL==1:
-			img=cv2.imread(train_image[k],0)
+			for cc in range(cfg.IMAGE_CHANNEL):
+				img = cv2.imread(train_image[5*k+cc],0)
+				img = np.asarray(img)
+				img = img.astype('float32')
+				img = img.reshape(1,cfg.INPUT_HEIGHT,cfg.INPUT_WIDTH)
+				img1[0,:,:,cc] = img
+
 		else:
 			img=cv2.imread(train_image[k])
+		print(train_label[k])
 		lab=cv2.imread(train_label[k])
 		lab2 = cv2.cvtColor(lab, cv2.COLOR_BGR2GRAY)
 		cv2.imshow("label",lab2)
-		cv2.imshow("iput",img)
+		#cv2.imshow("iput",img)
 		bi_thre_lab2, lab2 = cv2.threshold(lab2, 40, 255, cv2.THRESH_BINARY)
 		kernel02 = np.ones((2,2),np.uint8)
 		lab2 = cv2.dilate(lab2,kernel02,1)
@@ -55,14 +65,19 @@ with tf.Session() as sess:
 		num_edgepoint = len(contours_lab)
 		sum_edgepoint += num_edgepoint
 
-		print(train_image[k])
+		print(train_label[k])
 
-		img1 = img.reshape(1, cfg.INPUT_HEIGHT, cfg.INPUT_WIDTH, cfg.INPUT_CHANNEL)#src
+		#img1 = img.reshape(1, cfg.INPUT_HEIGHT, cfg.INPUT_WIDTH, cfg.INPUT_CHANNEL)#src
+		#src
+		img_part1 = img1[:,:,:cfg.TRAIN_WIDTH,:]
+
+		#label
 		img_gt1 = lab.reshape(1, cfg.INPUT_HEIGHT, cfg.INPUT_WIDTH, 3)
 		img_gt2 = img_gt1[0, 0:, 0:, 0]
-		img_gt3 = img_gt2.reshape(1, cfg.INPUT_HEIGHT, cfg.INPUT_WIDTH, 1)#label
+		img_gt3 = img_gt2.reshape(1, cfg.INPUT_HEIGHT, cfg.INPUT_WIDTH, 1)
+		img_gt3 = img_gt3[:,:,:cfg.TRAIN_WIDTH,:]
 		time1=time.clock()
-		img2,loss = sess.run([model_point.out,model_point.loss], feed_dict={model_point.x:img1,model_point.y:img_gt3})
+		img2,loss = sess.run([model_point.out,model_point.loss], feed_dict={model_point.x:img_part1,model_point.y:img_gt3})
 		time2=time.clock()-time1
 		print(1/time2,".....time")
 
@@ -78,7 +93,7 @@ with tf.Session() as sess:
 		img_dilation_right = cv2.dilate(img_erosion_right, kernel_point, iterations = 1)
 		#cv2.namedWindow('img_e_d', 1)
 		cv2.imshow('img_e_d', img_dilation_right)
-		bi_thre_right, img_binary_right = cv2.threshold(img_dilation_right, 60, 255, cv2.THRESH_BINARY)
+		bi_thre_right, img_binary_right = cv2.threshold(img_dilation_right, 70, 255, cv2.THRESH_BINARY)
 		cv2.imshow("66666666",img_binary_right)
 		#kernel_2 = np.ones((3,3),np.uint8)
 		#img_binary_right = cv2.dilate(img_binary_right, kernel02,1)
@@ -90,7 +105,7 @@ with tf.Session() as sess:
 		img_binary_right = img_binary_right.astype('uint8')
 		_, contours_right, hierarchy_right = cv2.findContours(img_binary_right.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 		#cv2.drawContours(img,contours_right,-1,(0,255,255),1)
-		img666 = img
+		img666 = img_origin
 		#img666 = cv2.cvtColor(img666, cv2.COLOR_GRAY2BGR)
 		contours_final =[]
 		for c in range(len(contours_right)):

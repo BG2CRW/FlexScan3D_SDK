@@ -60,12 +60,13 @@ class Rec_point(Network):
 		#self.summ_loss1	= self.scalar_summary('loss1', self.loss)
 
 		self.saver = tf.train.Saver()
-		save_path = cfg.MODEL_PATH
+		save_path = cfg.SAVE_PATH
+		model_path = cfg.MODEL_PATH
 
 		tf.global_variables_initializer().run()
 
 		if old:
-			self.saver.restore(self.sess, save_path)
+			self.saver.restore(self.sess, model_path)
 			print('Finished reloading param.')
 		else:
 			print('Building a new model.')
@@ -86,11 +87,14 @@ class Rec_point(Network):
 		for epoch in xrange(self.num_epochs):
 			random.shuffle(list_images)
 			avg_loss = 0
+			if (epoch+1) % 10 == 0:
+				self.learning_rate = self.learning_rate * 0.6
+
 			for batch in xrange(len(label_path)//self.batch_size):
 				time1 = time.clock()
 				image_batch, label_batch = self.read_images(image_path, label_path, batch, list_images)
 
-				for arg_index in range(2):
+				for arg_index in range(1):
 					new_image_batch = np.zeros([self.batch_size, self.h, self.w, self.tc])
 
 					for i in range(self.batch_size):
@@ -127,7 +131,14 @@ class Rec_point(Network):
 				avg_loss += err
 
 				#if count%20 == 0:
-			self.saver.save(self.sess, save_path)
+
+			if (epoch+1) % 10 == 0:
+				if old:
+					print("Saving the model:"+str(epoch+1+cfg.OLD_EPOCHS))
+					self.saver.save(self.sess, save_path+str(epoch+1+cfg.OLD_EPOCHS)+'/battery.ckpt')
+				else:
+					print("Saving the model:"+str(epoch+1))
+					self.saver.save(self.sess, save_path+str(epoch+1)+'/battery.ckpt')
 			avg_loss = avg_loss/len(label_path)
 			print("Avg_loss:",avg_loss)
 

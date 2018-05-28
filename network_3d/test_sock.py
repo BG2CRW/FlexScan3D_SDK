@@ -48,7 +48,7 @@ with tf.Session() as sess:
 		time1=time.clock()
 		img2 = sess.run(model_point.out, feed_dict={model_point.x:img1})
 		time2=time.clock()-time1
-		print(1/time2,".....time")
+		print(time2,".....time")
 		img3=img2[0, 0:, 0:, 0]
 		kernel_point = np.ones((3,3),np.uint8)
 		img_erosion = cv2.erode(img3, kernel_point, iterations = 1)
