@@ -52,7 +52,24 @@ void ScanProcessedCallback(void* userContext, FS3D_Handle handle)
 	}
 	boost::timer t1;
 	/*errorReport = Flatulence.flatulenceCheck(depthSrc, 127, 2.3, 240, 35);*/
-	cv::imwrite("cache.jpg", depthSrc);
+	if (depthSrc.cols > depthSrc.rows)
+	{
+		transpose(depthSrc, depthSrc);
+		flip(depthSrc, depthSrc, 1);
+	}
+	int target_width = 630;
+	int target_height = 1200;
+
+	cv::Mat padding = Mat::zeros(target_height, target_width, CV_8UC1);
+	for (int i = 0; i<depthSrc.rows; i++)
+	{
+		for (int j = 0; j<depthSrc.cols; j++)
+		{
+			padding.at<uchar>(i, j) = depthSrc.at<uchar>(i, j);
+		}
+	}
+
+	cv::imwrite("cache.jpg", padding);
 	cout << "Time of flatulence check: " << t1.elapsed() << endl;
 	if (errorReport == 1 || errorReport == 2)
 	{

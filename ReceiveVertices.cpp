@@ -180,22 +180,11 @@ int main(int argc, char* argv[])
 	cv::namedWindow("2d result", CV_WINDOW_NORMAL);
 	cv::imshow("2d result",result);
 	cv::waitKey();
-/*
 
-	cv::Mat silkModel2d;
-	vector<vector<Point>> contoursAl, contoursLiquid;
-	std::cout << contoursAl.size() << " and " << contoursLiquid.size() << endl;
-	string error2D = Detect2d.scratchCheck(img, silkModel2d, contoursAl, contoursLiquid);
-	std::cout << "Error ID for 2D is: " << error2D << endl;
-	std::cout << contoursAl.size() << " and " << contoursLiquid.size() << endl;
-*/
-
-	//imwrite("D:/silkModel2d.jpg", silkModel2d);
-	//imshow("silkModel2d", silkModel2d);
 #endif
-
+	
 #ifdef GRAB
-		/*
+		
 		for (int i = 0; i < 2; i++)
 		{
 			const char* pathToFlexScan3D = "C:\\Program Files\\LMI Technologies\\FlexScan3D 3.3\\App\\FlexScan3D.exe";
@@ -308,16 +297,14 @@ int main(int argc, char* argv[])
 			if (i == 1)
 			{
 				imgdepthHor = cv::imread("cache.jpg");
-				transpose(imgdepthHor, imgdepthHor);
-				flip(imgdepthHor, imgdepthHor, 1);
 			}
 		}
 		cv::imwrite(strPath3DVert, imgdepthVert);
 		cv::imwrite(strPath3DHor, imgdepthHor);
-		*/
+		
 #endif
 #ifdef READ
-	/*	cout << strPath3DVert << endl;
+		cout << strPath3DVert << endl;
 		cv::Mat imgdepthVert = cv::imread(strPath3DVert, 0);
 		cv::Mat output_Vert = socket3D(imgdepthVert);
 		cv::Mat result_Vert = Detect3d.drawResult(imgdepthVert, output_Vert);
@@ -329,7 +316,7 @@ int main(int argc, char* argv[])
 
 		cv::imshow("aa", result_Vert);
 		cv::imshow("bb", result_Hor);
-		cv::waitKey();*/
+		cv::waitKey();
 		
 		//int error3D = Detect3d.errorReport(imgdepthVert, imgdepthHor, silkModel2d);
 #endif
