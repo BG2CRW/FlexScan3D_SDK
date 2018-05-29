@@ -42,10 +42,12 @@ with tf.Session() as sess:
 	print("2D server build")
 	while True:
 		img1 = np.zeros([1,cfg.INPUT_HEIGHT,cfg.INPUT_WIDTH,cfg.IMAGE_CHANNEL])
-		for cc in range(cfg.IMAGE_CHANNEL)
-			sockClient,receiveImage,open=server.socketReceive(sock)
+		sockClient = server.accept(sock)
+		for cc in range(cfg.IMAGE_CHANNEL):
+			sockClient,receiveImage,open = server.socketReceive(sockClient)
 			#cv2.imshow("receiveImage",receiveImage);
 			#cv2.waitKey()
+			print(cc)
 			receiveImage = np.asarray(receiveImage)
 			receiveImage = receiveImage.astype('float32')
 			receiveImage = receiveImage.reshape(1,cfg.INPUT_HEIGHT,cfg.INPUT_WIDTH)

@@ -27,7 +27,7 @@ private:
 	cv::Mat edgeMake(cv::Mat origin);
 	
 	void showDefect(cv::Mat finalShow, cv::Mat inputImage);
-
+	
 
 	string edgeDetect(cv::Mat inputImage, cv::Mat edgeMask);
 	string blackDetect(cv::Mat inputImage, cv::Mat edgeMask);
@@ -38,7 +38,7 @@ private:
 public:
 	//Confirm the surface in function "silkMask"
 	int surfaceIndex;//1 for English face, 2 for Chinese face
-
+	cv::Mat drawResult(cv::Mat src, cv::Mat imgFCN);
 	int batteryKind;
 	string scratchCheck(cv::Mat image, cv::Mat& silkModel2d, vector<vector<Point>>& contoursAl, vector<vector<Point>>& contoursLiquid);
 };

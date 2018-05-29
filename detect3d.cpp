@@ -347,7 +347,7 @@ cv::Mat detect3d::drawResult(cv::Mat src,cv::Mat imgFCN)
 	{
 		drawContours(newsrc, contoursvalue, i, Scalar(0), 1, 8, hierarchy, 0, Point());
 	}
-	cv::imshow("result", newsrc);
+	//cv::imshow("result", newsrc);
 	return newsrc;
 
 }

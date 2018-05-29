@@ -17,6 +17,7 @@
 #include <math.h>
 #include "SocketMatTransmissionClient.h"
 #include "z_axis.h"
+#include <vector>
 
 
 // Include files to use the PYLON API.
@@ -24,7 +25,7 @@
 #include <pylon\PylonGUI.h>
 #include "config.hpp"
 
-
+int pic2Dnum = 5;
 static const uint32_t c_countOfImagesToGrab = 1;
 class detect2d Detect2d;
 class detect3d Detect3d;
@@ -33,7 +34,7 @@ class SocketMatTransmissionClient client;
 cv::Mat imgdepthVert;
 cv::Mat imgdepthHor;
 cv::Mat imageBasler;
-char path3D_prefix[]= "D:/techonlogy/Project/battery_test/ScanInterface/examples/c++/ReceiveVertices/src/network_3d/data/newSrc/";
+char path3D_prefix[]= "D:/vs2015_ws/ScanInterface/examples/c++/ReceiveVertices/src/network_3d/data/newSrc/";
 char path2D_prefix[] = "D:/Data/2D/";
 char path_suffix[] = ".jpg";
 char path_3DHor_suffix[] = "_Hor.jpg";
@@ -44,22 +45,24 @@ int errorReport;
 using namespace std;
 using namespace Pylon;
 using namespace cv;
-void socket2D(cv::Mat img)
+cv::Mat socket2D(vector<cv::Mat> img)
 {
-	if (-1 == client.socketConnect("127.0.0.1", 44))
+	if (-1 == client.socketConnect("127.0.0.1", 66))
 	{
 		std::cout << "connect failed" << endl;
 	}
 
-	Mat imageReceive;
-
 	int open = 0;//0:open,1:close
-	client.transmit(img, open);
-	imageReceive = client.get();
+	for (int i = 0; i < 5; i++)
+	{
+		client.transmit(img[i], open);
+		Sleep(200);
+	}
+	cv::Mat imageReceive = client.get();
 	client.socketDisconnect();
-	cv::imshow("clientReceive", imageReceive);
-	pitsdetect(imageReceive, img);
-	cv::waitKey();
+	//cv::imshow("clientReceive", imageReceive);
+	//cv::waitKey();
+	return imageReceive;
 
 }
 
@@ -81,12 +84,13 @@ cv::Mat socket3D(cv::Mat img)
 
 int main(int argc, char* argv[])
 {
+#ifdef GRAB
 	if (Motor.openCOM(TEXT("COM7")) == FALSE)
 	{
 		std::cout << "Failed to open serial port" << endl;
 		return 0;
 	}
-
+#endif
 	while (1)
 	{
 		counter++;
@@ -95,8 +99,10 @@ int main(int argc, char* argv[])
 		sprintf(str0, "%05d", counter);
 		char strPath2D[200], strPath3DVert[200], strPath3DHor[200];
 		sprintf(strPath2D, "%s%s", path2D_prefix, str0);
-		sprintf(strPath3DVert, "%s%s", path3D_prefix, str0, path_3DVert_suffix);
+		sprintf(strPath3DVert, "%s%s%s", path3D_prefix, str0, path_3DVert_suffix);
 		sprintf(strPath3DHor, "%s%s%s", path3D_prefix, str0, path_3DHor_suffix);
+		WCHAR dir_name[64];
+		swprintf(dir_name, L"%S", strPath2D);
 
 #ifdef GRAB
 		// The exit code of the sample application.
@@ -107,10 +113,8 @@ int main(int argc, char* argv[])
 		}
 		std::cout << "Please put a side of the next battery in basler!" << endl;
 		getchar();
-		WCHAR dir_name[64];
-		swprintf(dir_name, L"%S", strPath2D);
 		bool flag = CreateDirectory(dir_name, NULL);
-		for (int i = 0; i < 10; i++)
+		for (int i = 0; i < pic2Dnum; i++)
 		{
 			char strFileName[200];
 			sprintf(strFileName, "%s/%d%s", strPath2D, i, path_suffix);
@@ -156,28 +160,38 @@ int main(int argc, char* argv[])
 			// Releases all pylon resources. 
 			PylonTerminate();
 			std::cout << strFileName << endl;
-			Motor.move_distance(7);
+			Motor.move_distance(14);
 		}
 
 #endif
 #ifdef READ
-		/*		cv::Mat img = cv::imread(strPath2D,0);
+	vector<cv::Mat> img;
+	for (int i = 0; i < pic2Dnum; i++)
+	{
+		char strFileName[200];
+		sprintf(strFileName, "%s/%d%s", strPath2D, i, path_suffix);
+		cout << strFileName << endl;
+		cv::Mat img1 = cv::imread(strFileName,0);
+		img.push_back(img1);
+	}
+	
+	cv::Mat output = socket2D(img);
+	cv::Mat result = Detect2d.drawResult(img[1], output);
+	cv::namedWindow("2d result", CV_WINDOW_NORMAL);
+	cv::imshow("2d result",result);
+	cv::waitKey();
+/*
 
+	cv::Mat silkModel2d;
+	vector<vector<Point>> contoursAl, contoursLiquid;
+	std::cout << contoursAl.size() << " and " << contoursLiquid.size() << endl;
+	string error2D = Detect2d.scratchCheck(img, silkModel2d, contoursAl, contoursLiquid);
+	std::cout << "Error ID for 2D is: " << error2D << endl;
+	std::cout << contoursAl.size() << " and " << contoursLiquid.size() << endl;
+*/
 
-				//socket and aokeng detect
-				socketFCN(img);
-
-
-				cv::Mat silkModel2d;
-				vector<vector<Point>> contoursAl, contoursLiquid;
-				std::cout << contoursAl.size() << " and " << contoursLiquid.size() << endl;
-				string error2D = Detect2d.scratchCheck(img, silkModel2d, contoursAl, contoursLiquid);
-				std::cout << "Error ID for 2D is: " << error2D << endl;
-				std::cout << contoursAl.size() << " and " << contoursLiquid.size() << endl;
-				*/
-
-				//imwrite("D:/silkModel2d.jpg", silkModel2d);
-				//imshow("silkModel2d", silkModel2d);
+	//imwrite("D:/silkModel2d.jpg", silkModel2d);
+	//imshow("silkModel2d", silkModel2d);
 #endif
 
 #ifdef GRAB
@@ -303,7 +317,7 @@ int main(int argc, char* argv[])
 		*/
 #endif
 #ifdef READ
-		cout << strPath3DVert << endl;
+	/*	cout << strPath3DVert << endl;
 		cv::Mat imgdepthVert = cv::imread(strPath3DVert, 0);
 		cv::Mat output_Vert = socket3D(imgdepthVert);
 		cv::Mat result_Vert = Detect3d.drawResult(imgdepthVert, output_Vert);
@@ -315,7 +329,7 @@ int main(int argc, char* argv[])
 
 		cv::imshow("aa", result_Vert);
 		cv::imshow("bb", result_Hor);
-		cv::waitKey();
+		cv::waitKey();*/
 		
 		//int error3D = Detect3d.errorReport(imgdepthVert, imgdepthHor, silkModel2d);
 #endif

@@ -57,7 +57,7 @@ void SocketMatTransmissionClient::socketDisconnect(void)
 int SocketMatTransmissionClient::transmit(cv::Mat image,int signal)  
 {
 	int pkg_num =(image.rows*image.cols/BUFFER_SIZE_LIMIT+1)*image.channels();
-	//cout << image.rows << " " << image.cols << " " << image.channels() << " " << pkg_num << endl;
+	cout << image.rows << " " << image.cols << " " << image.channels() << " " << pkg_num << endl;
 	data.rows = image.rows;
 	data.cols = image.cols;
 	data.channel = image.channels();
@@ -96,8 +96,13 @@ int SocketMatTransmissionClient::transmit(cv::Mat image,int signal)
 			{
 				return -1;
 			}
+			char buffer[10] = {0};
+			recv(sock, (char*)buffer, sizeof(buffer), 0);
+			cout << buffer[1] << endl;
+			while (buffer[1] != 'K');
 		}
 	}
+
 	return 0;
 }  
 

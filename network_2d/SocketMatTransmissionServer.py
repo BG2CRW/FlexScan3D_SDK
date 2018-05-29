@@ -12,15 +12,17 @@ BUFFER_SIZE_LIMIT = 19300000
 
 def socketConnect(port):
 	sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM) 
+	sock.setblocking(1)
 	sock.bind(("127.0.0.1",port)) 
 	sock.listen(5) 
 	return sock
 
-def socketReceive(sock):
-	
+def accept(sock):
 	sockClient,addr = sock.accept() 
 	print ('address:', addr)
-	s=sockClient.recv(100)
+	return sockClient
+def socketReceive(sockClient):
+	s = sockClient.recv(20)
 	signal,pkg_num,channel,rows,cols=struct.unpack("<5I",s)
 	small_pkg = int(rows*cols / BUFFER_SIZE_LIMIT + 1)
 	#print(signal,pkg_num,channel,rows,cols)
@@ -31,9 +33,11 @@ def socketReceive(sock):
 		for j in range(small_pkg):
 			packet=sockClient.recv(BUFFER_SIZE_LIMIT)
 	
+	
 	for h in range(rows):
 		for w in range (cols):
 			img[h][w]=packet[h*cols+w]
+	sockClient.sendall(b'OK')
 	return sockClient,img,signal
 
 def socketSend(sockClient,imgSend):

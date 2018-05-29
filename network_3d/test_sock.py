@@ -39,7 +39,8 @@ with tf.Session() as sess:
 	sock=server.socketConnect(55)
 	print("server build")
 	while True:
-		sockClient,receiveImage,open=server.socketReceive(sock)
+		sockClient = server.accept(sock)
+		sockClient,receiveImage,open=server.socketReceive(sockClient)
 		#cv2.imshow("receiveImage",receiveImage);
 		#cv2.waitKey(0)
 		#test

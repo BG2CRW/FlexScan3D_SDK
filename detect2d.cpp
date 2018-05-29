@@ -10,6 +10,41 @@ void onChangeTrackBarCanny(int pos, void* data);
 
 cv::Mat imageTemp;
 
+cv::Mat detect2d::drawResult(cv::Mat src, cv::Mat imgFCN)
+{
+	//Find the damages
+	vector<vector<Point>> contours;
+	vector<vector<Point>> contoursvalue;
+	vector<Vec4i> hierarchy;
+	Mat image1 = imgFCN.clone();
+	Mat newsrc = src.clone();
+	findContours(image1, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+	vector<double> length;
+	for (int i = 0; i < contours.size(); i++)
+	{
+		Moments moms = moments(Mat(contours[i]));
+		double area = moms.m00;
+		double templength = arcLength(contours[i], true);    //compute the perimeter
+
+		if (area > 40)	//choose right area
+		{
+			//cout << "are: " << area << endl;
+
+			contoursvalue.push_back(contours[i]);
+			length.push_back(templength);
+
+			//cout << "The area: " << area << " and templength: " << templength << endl;
+		}
+	}
+	for (int i = 0; i < contoursvalue.size(); i++)
+	{
+		drawContours(newsrc, contoursvalue, i, Scalar(0), 3, 8, hierarchy, 0, Point());
+	}
+	//cv::imshow("result", newsrc);
+	return newsrc;
+
+}
+
 string detect2d::scratchCheck(cv::Mat image, cv::Mat& silkModel2d, vector<vector<Point>>& contoursAl, vector<vector<Point>>& contoursLiquid)
 {
 	//cvtColor(image, image, CV_RGB2GRAY, 0);
