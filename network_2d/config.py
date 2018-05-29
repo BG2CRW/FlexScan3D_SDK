@@ -22,7 +22,7 @@ NUM_EPOCHS=30
 
 IMAGE_PATH='data/data524/trainSrc'
 LABEL_PATH='data/data524/trainLabel'
-MODEL_PATH='model/data524/scratch.ckpt'
+MODEL_PATH='model/data524/battery.ckpt'
 SAVE_PATH='model/data524'
 #TEST_PATH='data/test'
 TEST_PATH='data/data524/testSrc'

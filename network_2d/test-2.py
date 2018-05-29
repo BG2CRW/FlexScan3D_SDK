@@ -39,8 +39,8 @@ with tf.Session() as sess:
 		if cfg.INPUT_CHANNEL==1:
 			for cc in range(cfg.IMAGE_CHANNEL):
 				img = cv2.imread(train_image[5*k+cc],0)
-				cv2.imshow("aa",img)
-				cv2.waitKey()
+				#cv2.imshow("aa",img)
+				#cv2.waitKey()
 				img = np.asarray(img)
 				img = img.astype('float32')
 				img = img.reshape(1,cfg.INPUT_HEIGHT,cfg.INPUT_WIDTH)
