@@ -28,17 +28,17 @@ with tf.Session() as sess:
 	saver.restore(sess, save_path)
 	print('Finished reloading param.')
 
-	[train_image, train_label, dir_] = input_data(1)
-	data_num = len(train_label)
+	[test_image, test_label, dir_] = input_data(1)
+	data_num = len(test_label)
 	img1 = np.zeros([1,cfg.INPUT_HEIGHT,cfg.INPUT_WIDTH,cfg.IMAGE_CHANNEL])
 	for k in range(int(data_num)):
 		
 
-		img_origin = cv2.imread(train_image[5*k+1])
+		img_origin = cv2.imread(test_image[5*k+1])
 		print(img_origin.shape)
 		if cfg.INPUT_CHANNEL==1:
 			for cc in range(cfg.IMAGE_CHANNEL):
-				img = cv2.imread(train_image[5*k+cc],0)
+				img = cv2.imread(test_image[5*k+cc],0)
 				#cv2.imshow("aa",img)
 				#cv2.waitKey()
 				img = np.asarray(img)
@@ -47,7 +47,7 @@ with tf.Session() as sess:
 				img1[0,:,:,cc] = img
 
 		else:
-			img=cv2.imread(train_image[k])
+			img=cv2.imread(test_image[k])
 
 		#img1 = img.reshape(1, cfg.INPUT_HEIGHT, cfg.INPUT_WIDTH, cfg.INPUT_CHANNEL)#src
 		#src
@@ -56,13 +56,12 @@ with tf.Session() as sess:
 		print(img_part2.shape)
 
 		time1=time.clock()
-		#img2_1 = sess.run(model_point.out, feed_dict={model_point.x:img_part1})
-		#img2_2 = sess.run(model_point.out, feed_dict={model_point.x:img_part2})
-		img2_1,img2_2 = sess.run([model_point.out,model_point.out],feed_dict={model_point.x:img_part1,model_point.x:img_part2})
+		img2_1 = sess.run(model_point.out, feed_dict={model_point.x:img_part1})
+		img2_2 = sess.run(model_point.out, feed_dict={model_point.x:img_part2})
 		time2=time.clock()-time1
 		print(time2,".....time")
 
-		img3_1 = img2_1[0, 0:, 0:, 0]
+		img3_1 = img2_1[0,	 	0:, 0:, 0]
 		img3_2 = img2_2[0, 0:, 0:, 0]
 		print(img3_1.shape)
 		print(img3_2.shape)
@@ -78,7 +77,7 @@ with tf.Session() as sess:
 		#cv2.imshow("66666666",img_binary_right)
 		img_binary_right = img_binary_right.astype('uint8')
 		_, contours_right, hierarchy_right = cv2.findContours(img_binary_right.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-		img666 = img_origin
+		img = img_origin
 		contours_final =[]
 		for c in range(len(contours_right)):
 			cnt_right = contours_right[c]
@@ -87,8 +86,9 @@ with tf.Session() as sess:
 				continue
 			contours_final.append(cnt_right)
 			x_right, y_right ,w_right, h_right = cv2.boundingRect(cnt_right)
-			cv2.rectangle(img666, (x_right,y_right), (x_right+w_right, y_right+h_right), (255,0,0), 2)
+			cv2.drawContours(img,contours_right,-1,(0,255,255),1)  
+			cv2.rectangle(img, (x_right,y_right), (x_right+w_right, y_right+h_right), (255,0,0), 2)
 		cv2.namedWindow('right', 0)
-		cv2.imshow('right', img666)
+		cv2.imshow('right', img)
 		cv2.waitKey()
 		
