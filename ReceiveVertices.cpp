@@ -35,7 +35,7 @@ cv::Mat imgdepthVert;
 cv::Mat imgdepthHor;
 cv::Mat imageBasler;
 char path3D_prefix[]= "D:/vs2015_ws/ScanInterface/examples/c++/ReceiveVertices/src/network_3d/data/newSrc/";
-char path2D_prefix[] = "D:/Data/2D/";
+char path2D_prefix[] = "D:/vs2015_ws/ScanInterface/examples/c++/ReceiveVertices/src/network_2d/data/newSrc/";
 char path_suffix[] = ".jpg";
 char path_3DHor_suffix[] = "_Hor.jpg";
 char path_3DVert_suffix[] = "_Vert.jpg";
@@ -180,6 +180,7 @@ int main(int argc, char* argv[])
 	cv::namedWindow("2d result", CV_WINDOW_NORMAL);
 	cv::imshow("2d result",result);
 	cv::waitKey();
+	destroyWindow("2d result");
 
 #endif
 	
@@ -304,7 +305,7 @@ int main(int argc, char* argv[])
 		
 #endif
 #ifdef READ
-		cout << strPath3DVert << endl;
+	/*	cout << strPath3DVert << endl;
 		cv::Mat imgdepthVert = cv::imread(strPath3DVert, 0);
 		cv::Mat output_Vert = socket3D(imgdepthVert);
 		cv::Mat result_Vert = Detect3d.drawResult(imgdepthVert, output_Vert);
@@ -316,7 +317,7 @@ int main(int argc, char* argv[])
 
 		cv::imshow("aa", result_Vert);
 		cv::imshow("bb", result_Hor);
-		cv::waitKey();
+		cv::waitKey();*/
 		
 		//int error3D = Detect3d.errorReport(imgdepthVert, imgdepthHor, silkModel2d);
 #endif

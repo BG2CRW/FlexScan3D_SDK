@@ -60,13 +60,11 @@ class Rec_point(Network):
 		#self.summ_loss1	= self.scalar_summary('loss1', self.loss)
 
 		self.saver = tf.train.Saver()
-		save_path = cfg.SAVE_PATH
-		model_path = cfg.MODEL_PATH
-
+		save_path = cfg.MODEL_PATH
 		tf.global_variables_initializer().run()
 
 		if old:
-			self.saver.restore(self.sess, model_path)
+			self.saver.restore(self.sess, save_path)
 			print('Finished reloading param.')
 		else:
 			print('Building a new model.')
@@ -130,17 +128,15 @@ class Rec_point(Network):
 				print("Epoch: [%2d] [%4d/%4d], loss: %.4f, time:%.2f" % (epoch, batch, len(label_path)//self.batch_size, err, time2))
 				avg_loss += err
 
-				#if count%20 == 0:
+				self.saver.restore(self.sess, save_path)
 
-			if (epoch+1) % 10 == 0:
-				if old:
-					print("Saving the model:"+str(epoch+1+cfg.OLD_EPOCHS))
-					self.saver.save(self.sess, save_path+str(epoch+1+cfg.OLD_EPOCHS)+'/battery.ckpt')
-				else:
-					print("Saving the model:"+str(epoch+1))
-					self.saver.save(self.sess, save_path+str(epoch+1)+'/battery.ckpt')
 			avg_loss = avg_loss/len(label_path)
 			print("Avg_loss:",avg_loss)
+			txt.write("Avg_loss:"+str(avg_loss)+'\n')
+			txt_loss.write("Epoch"+str(epoch)+": Avg_loss:"+str(avg_loss)+'\n')
+
+		print("Train finished.")
+		txt.close()
 
 
 	def data_aug(self,image):
@@ -202,6 +198,7 @@ class Rec_point(Network):
 		for i in range(self.batch_size):
 			for cc in range(self.ic):
 				if cfg.INPUT_CHANNEL==1:
+					#print(image_path[list_images[batch*self.batch_size+i]*self.ic + cc])
 					im = cv2.imread(image_path[list_images[batch*self.batch_size+i]*self.ic + cc],0)
 				else: #unused
 					im = cv2.imread(image_path[list_images[batch*self.batch_size+i]])
@@ -214,6 +211,7 @@ class Rec_point(Network):
 				image[i,:,:,cc] = im
 			#print("image:%s"%image_path[list_images[batch*self.batch_size+i]])
 
+			#print(label_path[list_images[batch*self.batch_size+i]])
 			la = cv2.imread(label_path[list_images[batch*self.batch_size+i]])
 			la = np.asarray(la)
 			la = la.astype('float32')

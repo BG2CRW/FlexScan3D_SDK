@@ -59,7 +59,8 @@ with tf.Session() as sess:
 		print(img_part2.shape)
 
 		time1=time.clock()
-		img2_1,img2_2 = sess.run([model_point.out,model_point.out],feed_dict={model_point.x:img_part1,model_point.x:img_part2})
+		img2_1 = sess.run(model_point.out, feed_dict={model_point.x:img_part1})
+		img2_2 = sess.run(model_point.out, feed_dict={model_point.x:img_part2})
 		time2=time.clock()-time1
 		print(time2,".....time")
 
