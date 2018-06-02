@@ -13,9 +13,8 @@ BUFFER_SIZE_LIMIT = 19300000
 
 def socketConnect(port):
 	sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM) 
-	#sock.setblocking(1)
+	sock.setblocking(1)
 	sock.bind(("127.0.0.1",port))
-	#sock.connect(("127.0.0.1",port))
 	print("current port is:"+str(port)) 
 	sock.listen(5) 
 	return sock
@@ -24,16 +23,16 @@ def accept(sock):
 	sockClient,addr = sock.accept() 
 	print ('address:', addr)
 	return sockClient
+	
 def socketReceive(sockClient, num):
 
 	#print("!")
 	s = sockClient.recv(20)
-	#print("@")
+	print(s)
 	signal,pkg_num,channel,rows,cols=struct.unpack("<5I",s)
 	#print("#$")
 	small_pkg = int(rows*cols / BUFFER_SIZE_LIMIT + 1)
 	print(signal,pkg_num,channel,rows,cols)
-	print("%%%%%%%%%%"+str(pkg_num)+" "+str(small_pkg))
 	if small_pkg==1:
 		img=np.zeros((rows,cols),dtype=np.uint8)
 
@@ -43,12 +42,19 @@ def socketReceive(sockClient, num):
 	print("packet"+str(num)+" size is:"+str(len(packet)))
 	for h in range(rows):
 		for w in range (cols):
-			img[h][w]=0
 			img[h][w]=packet[h*cols+w]
 			#print(packet[h*cols+w])
 
 	sockClient.sendall(b'OK')
 	return sockClient,img,signal
+	
+def socketReceiveSignal(sockClient):
+
+	#print("!")
+	s = sockClient.recv(20)
+	signal,pkg_num,channel,rows,cols=struct.unpack("<5I",s)
+	print(signal)
+	return sockClient,signal
 
 def socketSend(sockClient,imgSend):
 	s_rows,s_cols=imgSend.shape
@@ -64,6 +70,10 @@ def socketSend(sockClient,imgSend):
 		for w in range (s_cols):
 			packet[h*s_cols+w]=imgSend[h][w]
 	sockClient.send(packet)
+	return sockClient
+	
+def socketSendSignal(sockClient):
+	sockClient.sendall(b'OK')
 	return sockClient
 
 def socketDisconnect(sockClient,sock):

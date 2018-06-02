@@ -42,7 +42,7 @@ class SocketMatTransmissionClient
 	//          PORT    传输端口  
 	// return : -1      连接失败  
 	//          1       连接成功  
-	int socketConnect(const char* IP, int PORT, cv::Mat img, int open);
+	int socketConnect(const char* IP, int PORT);
 
 
 	// 传输图像  
@@ -54,6 +54,7 @@ class SocketMatTransmissionClient
 
 	// 断开socket连接  
 	void socketDisconnect(void);  
+	int sendSignal(int open);
 };  
 
 #endif  

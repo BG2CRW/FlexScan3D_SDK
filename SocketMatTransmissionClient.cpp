@@ -18,7 +18,7 @@ SocketMatTransmissionClient::~SocketMatTransmissionClient(void)
 }  
 
 
-int SocketMatTransmissionClient::socketConnect(const char* IP, int PORT, cv::Mat img, int open)
+int SocketMatTransmissionClient::socketConnect(const char* IP, int PORT)
 {  
 	WSADATA wsaData;
 	WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -43,9 +43,6 @@ int SocketMatTransmissionClient::socketConnect(const char* IP, int PORT, cv::Mat
 	else   
 	{  
 		printf("connect successful!\n"); 
-		//imshow("1", img);
-		transmit(img, open);
-		std::cout << "send sucess " << endl;
 		return 1;
 	} 
 	
@@ -56,7 +53,7 @@ int SocketMatTransmissionClient::socketConnect(const char* IP, int PORT, cv::Mat
 void SocketMatTransmissionClient::socketDisconnect(void)  
 {  
 	closesocket(sock);  
-	WSACleanup();
+	//WSACleanup();
 }  
 
 int SocketMatTransmissionClient::transmit(cv::Mat image,int signal)  
@@ -131,4 +128,23 @@ cv::Mat SocketMatTransmissionClient::get()
 		}
 	}
     return getImage;  
+}
+
+int SocketMatTransmissionClient::sendSignal(int open)
+{
+	data.rows = 0;
+	data.cols = 0;
+	data.channel = 0;
+	data.signal = open;
+	data.pkg_size = 0;
+	int small_pkg = 0;
+	if (send(sock, (char *)(&data), sizeof(data), 0) < 0)
+	{
+		return -1;
+	}
+	char buffer[10] = { 0 };
+	recv(sock, (char*)buffer, sizeof(buffer), 0);
+	cout << buffer[1] << endl;
+	while (buffer[1] != 'K');
+	return 1;
 }

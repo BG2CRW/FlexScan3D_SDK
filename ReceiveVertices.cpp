@@ -39,7 +39,7 @@ cv::Mat imgdepthVert;
 cv::Mat imgdepthHor;
 cv::Mat imageBasler;
 char path3D_prefix[]= "D:/vs2015_ws/ScanInterface/examples/c++/ReceiveVertices/src/network_3d/data/newSrc/";
-char path2D_prefix[] = "D:/vs2015_ws/ScanInterface/examples/c++/ReceiveVertices/src/network_2d/data/newSrc/";
+char path2D_prefix[] = "D:/techonlogy/Project/battery_test/ScanInterface/examples/c++/ReceiveVertices/src/network_2d/data/newSrc/";
 char path_suffix[] = ".jpg";
 char path_3DHor_suffix[] = "_Hor.jpg";
 char path_3DVert_suffix[] = "_Vert.jpg";
@@ -53,34 +53,39 @@ using namespace cv;
 
 void call_from_thread(vector<cv::Mat> img, int tid) {
 	cout << "new thread!  " << tid << endl;
-	//imshow("0", img[tid-1]);
-	if (-1 == client.socketConnect("127.0.0.1", tid, img[tid-1],1))
+	if (-1 == client.socketConnect("127.0.0.1", tid))
 	{
 		std::cout << "connect failed " << tid << endl;
-		call_from_thread(img, tid);
+		if (-1 == client.socketConnect("127.0.0.1", tid))
+		{
+			std::cout << "connect failed " << tid << endl;
+		}
 	}
-
-		int open = 0;//0:open,1:close
-		//client.transmit(img[tid-1], open);
-		//Sleep(200);
-		//std::cout << "send sucess " << tid << endl;
+	//std::cout << "connect sucess " << tid << endl;
+	int open = 0;//0:open,1:close
+	client.transmit(img[tid-31], open);
+	Sleep(1000);
+	//std::cout << "send sucess " << tid << endl;
+	cv::Mat imageReceive = client.get();
+	client.socketDisconnect();
 }
 
 
 cv::Mat socket2D(vector<cv::Mat> img, int num)
 {
+	/*
 	std::thread t[pic2Dnum];
 	//Launch a group of threads  
-	for (int i = minnum; i < pic2Dnum; ++i) {
-		t[i] = thread(call_from_thread, img, i+1);
+	for (int i = minnum; i <pic2Dnum; ++i) {
+		t[i] = thread(call_from_thread, img, i+31);
 	}
 	std::cout << "Launched from the main@" << std::endl;;
 	//Join the threads with the main thread  
 	for (int i = minnum; i < pic2Dnum; ++i) {
 		t[i].join();
 	}
-		std::cout << "Main thread!" << std::endl;
-		
+	std::cout << "Main thread!" << std::endl;
+		*/
 	
 	//int open = 0;//0:open,1:close
 	/*for (int i = 0; i < pic2Dnum; i++){
@@ -89,12 +94,35 @@ cv::Mat socket2D(vector<cv::Mat> img, int num)
 		Sleep(200);
 	
 }*/
-	cv::Mat imageReceive = client.get();
-	client.socketDisconnect();
+	//cv::Mat imageReceive = client.get();
+	//client.socketDisconnect();
 	//cv::imshow("clientReceive", imageReceive);
 	//cv::waitKey();
-	return imageReceive;
+	cout<<img.size()<<endl;
+	for (int i = 0; i < img.size(); i++)
+	{
+		char str_prefix[] = "D:/cache/";
+		char str_suffix[] = ".jpg";
+		char str[200];
+		sprintf(str, "%s%d%s", str_prefix, i, str_suffix);
+		vector<int> compression_params;
+		compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);  //选择jpeg
+		compression_params.push_back(100); //在这个填入你要的图片质量
+		imwrite(str,img[i],compression_params);
+	}
+	if (-1 == client.socketConnect("127.0.0.1", 66))
+	{
+		std::cout << "connect failed" << endl;
+	}
+	int open = 0;//0:open,1:close
+	int ack = client.sendSignal(open);
+	cv::Mat result;
+	if (ack == 1)
+	{
+		result=imread("D:/cache/result.jpg");
+	}
 
+	return result;
 }
 
 
