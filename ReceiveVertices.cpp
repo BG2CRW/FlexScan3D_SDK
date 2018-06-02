@@ -18,6 +18,8 @@
 #include "SocketMatTransmissionClient.h"
 #include "z_axis.h"
 #include <vector>
+#include <thread>
+
 
 
 // Include files to use the PYLON API.
@@ -25,7 +27,9 @@
 #include <pylon\PylonGUI.h>
 #include "config.hpp"
 
-int pic2Dnum = 5;
+#define pic2Dnum 5
+#define minnum 0
+
 static const uint32_t c_countOfImagesToGrab = 1;
 class detect2d Detect2d;
 class detect3d Detect3d;
@@ -45,19 +49,46 @@ int errorReport;
 using namespace std;
 using namespace Pylon;
 using namespace cv;
-cv::Mat socket2D(vector<cv::Mat> img)
-{
-	if (-1 == client.socketConnect("127.0.0.1", 66))
+
+
+void call_from_thread(vector<cv::Mat> img, int tid) {
+	cout << "new thread!  " << tid << endl;
+	//imshow("0", img[tid-1]);
+	if (-1 == client.socketConnect("127.0.0.1", tid, img[tid-1],1))
 	{
-		std::cout << "connect failed" << endl;
+		std::cout << "connect failed " << tid << endl;
+		call_from_thread(img, tid);
 	}
 
-	int open = 0;//0:open,1:close
-	for (int i = 0; i < 5; i++)
-	{
+		int open = 0;//0:open,1:close
+		//client.transmit(img[tid-1], open);
+		//Sleep(200);
+		//std::cout << "send sucess " << tid << endl;
+}
+
+
+cv::Mat socket2D(vector<cv::Mat> img, int num)
+{
+	std::thread t[pic2Dnum];
+	//Launch a group of threads  
+	for (int i = minnum; i < pic2Dnum; ++i) {
+		t[i] = thread(call_from_thread, img, i+1);
+	}
+	std::cout << "Launched from the main@" << std::endl;;
+	//Join the threads with the main thread  
+	for (int i = minnum; i < pic2Dnum; ++i) {
+		t[i].join();
+	}
+		std::cout << "Main thread!" << std::endl;
+		
+	
+	//int open = 0;//0:open,1:close
+	/*for (int i = 0; i < pic2Dnum; i++){
+	
 		client.transmit(img[i], open);
 		Sleep(200);
-	}
+	
+}*/
 	cv::Mat imageReceive = client.get();
 	client.socketDisconnect();
 	//cv::imshow("clientReceive", imageReceive);
@@ -67,20 +98,20 @@ cv::Mat socket2D(vector<cv::Mat> img)
 }
 
 
-cv::Mat socket3D(cv::Mat img)
-{
-	if (-1 == client.socketConnect("127.0.0.1", 55))
-	{
-		std::cout << "connect failed" << endl;
-	}
-
-	int open = 0;//0:open,1:close
-	client.transmit(img, open);
-	cv::Mat imageReceive = client.get();
-	client.socketDisconnect();
-	return imageReceive;
-
-}
+//cv::Mat socket3D(cv::Mat img)
+//{
+//	if (-1 == client.socketConnect("127.0.0.1", 55))
+//	{
+//		std::cout << "connect failed" << endl;
+//	}
+//
+//	int open = 0;//0:open,1:close
+//	client.transmit(img, open);
+//	cv::Mat imageReceive = client.get();
+//	client.socketDisconnect();
+//	return imageReceive;
+//
+//}
 
 int main(int argc, char* argv[])
 {
@@ -175,7 +206,7 @@ int main(int argc, char* argv[])
 		img.push_back(img1);
 	}
 	
-	cv::Mat output = socket2D(img);
+	cv::Mat output = socket2D(img, 1);
 	cv::Mat result = Detect2d.drawResult(img[1], output);
 	cv::namedWindow("2d result", CV_WINDOW_NORMAL);
 	cv::imshow("2d result",result);

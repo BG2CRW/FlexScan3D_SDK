@@ -6,11 +6,11 @@
 #include <stdio.h>  
 #include <stdlib.h>  
 #include <string.h>  
-#include <errno.h>   
-#include <Windows.h>
+#include <errno.h>
+#include <Windows.h>   
 #pragma comment (lib, "ws2_32.lib") //加载 ws2_32.dll
-
 using namespace cv;
+
 #define BUFFER_SIZE_LIMIT 19300000
 
 struct sentbuf  
@@ -42,7 +42,7 @@ class SocketMatTransmissionClient
 	//          PORT    传输端口  
 	// return : -1      连接失败  
 	//          1       连接成功  
-	int socketConnect(const char* IP, int PORT);  
+	int socketConnect(const char* IP, int PORT, cv::Mat img, int open);
 
 
 	// 传输图像  
