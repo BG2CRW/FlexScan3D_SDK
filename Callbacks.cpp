@@ -71,6 +71,8 @@ void ScanProcessedCallback(void* userContext, FS3D_Handle handle)
 
 	cv::imwrite("cache.jpg", padding);
 	cout << "Time of flatulence check: " << t1.elapsed() << endl;
+	cv::imshow("padding",padding);
+	cv::waitKey();
 	if (errorReport == 1 || errorReport == 2)
 	{
 		return;

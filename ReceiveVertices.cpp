@@ -19,6 +19,8 @@
 #include "z_axis.h"
 #include <vector>
 #include <thread>
+#include <io.h>  
+#include <direct.h>  
 
 
 
@@ -101,7 +103,7 @@ cv::Mat socket2D(vector<cv::Mat> img, int num)
 	cout<<img.size()<<endl;
 	for (int i = 0; i < img.size(); i++)
 	{
-		char str_prefix[] = "D:/cache/";
+		char str_prefix[] = "C:/cache/";
 		char str_suffix[] = ".jpg";
 		char str[200];
 		sprintf(str, "%s%d%s", str_prefix, i, str_suffix);
@@ -119,7 +121,7 @@ cv::Mat socket2D(vector<cv::Mat> img, int num)
 	cv::Mat result;
 	if (ack == 1)
 	{
-		result=imread("D:/cache/result.jpg");
+		result=imread("C:/cache/result.jpg");
 	}
 
 	return result;
@@ -143,13 +145,20 @@ cv::Mat socket2D(vector<cv::Mat> img, int num)
 
 int main(int argc, char* argv[])
 {
+/*
+	if (access("C:/cache", 0) == -1)
+	{
+		mkdir("C:/cache");
+	}
 #ifdef GRAB
 	if (Motor.openCOM(TEXT("COM7")) == FALSE)
 	{
 		std::cout << "Failed to open serial port" << endl;
 		return 0;
 	}
+
 #endif
+*/
 	while (1)
 	{
 		counter++;
@@ -162,7 +171,7 @@ int main(int argc, char* argv[])
 		sprintf(strPath3DHor, "%s%s%s", path3D_prefix, str0, path_3DHor_suffix);
 		WCHAR dir_name[64];
 		swprintf(dir_name, L"%S", strPath2D);
-
+/*
 #ifdef GRAB
 		// The exit code of the sample application.
 		int exitCode = 0;
@@ -223,6 +232,7 @@ int main(int argc, char* argv[])
 		}
 
 #endif
+*/
 #ifdef READ
 	vector<cv::Mat> img;
 	for (int i = 0; i < pic2Dnum; i++)
@@ -247,7 +257,7 @@ int main(int argc, char* argv[])
 		
 		for (int i = 0; i < 2; i++)
 		{
-			const char* pathToFlexScan3D = "C:\\Program Files\\LMI Technologies\\FlexScan3D 3.3\\App\\FlexScan3D.exe";
+			const char* pathToFlexScan3D = "C:/Program Files/Polyga/FlexScan3D 3.3/App/FlexScan3D.exe";
 
 			char* itemName;
 			int* numValues;
@@ -303,16 +313,17 @@ int main(int argc, char* argv[])
 			boost::timer constant;
 
 			//printf("Setting scanner exposure...\n");
-			if (FS3D_Command("scriptline \"SetScannerExposure(GetScannerNameFromIndex(0), 100)\"") != FS3D_RESULT_OK)
+			//if (FS3D_Command("scriptline \"SetScannerExposure(GetScannerNameFromIndex(0), 100)\"") != FS3D_RESULT_OK)
+			/*if (FS3D_Command("scriptline \"AutoSetExposure()\"") != FS3D_RESULT_OK)
 			{
 				printf("An error occurred when set scanner exposure.\n");
 				//FS3D_Exit();
 				FS3D_Detach();
 				return -1;
-			}
+			}*/
 
 			printf("Scanning...\n");
-			if (FS3D_Command("scriptline \"Scan()\"") != FS3D_RESULT_OK)
+			if (FS3D_Command("scriptline \"ScanHDR()\"") != FS3D_RESULT_OK)
 			{
 				printf("An error occurred when attempting to scan.\n");
 				//FS3D_Exit();
@@ -353,10 +364,14 @@ int main(int argc, char* argv[])
 			if (i == 0)
 			{
 				imgdepthVert = cv::imread("cache.jpg");
+				//cv::imshow("imgdepthVert", imgdepthVert);
+				//cv::waitKey();
 			}
 			if (i == 1)
 			{
 				imgdepthHor = cv::imread("cache.jpg");
+				//cv::imshow("imgdepthHor", imgdepthHor);
+				//cv::waitKey();
 			}
 		}
 		cv::imwrite(strPath3DVert, imgdepthVert);

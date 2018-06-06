@@ -47,7 +47,7 @@ with tf.Session() as sess:
 		if open==1:
 			for cc in range(cfg.IMAGE_CHANNEL):		
 				print(cc)
-				receiveImage = cv2.imread("D:/cache/"+str(cc)+".jpg",0)
+				receiveImage = cv2.imread("C:/cache/"+str(cc)+".jpg",0)
 				receiveImage = receiveImage.astype('float32')
 				receiveImage = receiveImage.reshape(1,cfg.INPUT_HEIGHT,cfg.INPUT_WIDTH)
 				img1[0,:,:,cc] = receiveImage
@@ -77,7 +77,7 @@ with tf.Session() as sess:
 		img_binary=img_binary.astype(np.uint8)
 		img3=img3.astype(np.uint8)
 		
-		cv2.imwrite("D:/cache/result.jpg",img3)
+		cv2.imwrite("C:/cache/result.jpg",img3)
 		#sockClient=server.socketSend(sockClient,img_binary)
 		sockClient=server.socketSendSignal(sockClient)
 
