@@ -5,7 +5,7 @@ import os
 
 TRAIN_OLD_STATUS=True   #true for continue train
 OLD_EPOCHS = 200
-GPU_NUMBER='1'
+GPU_NUMBER='0'
 
 INPUT_HEIGHT=2168  #1200  1422  2168
 INPUT_WIDTH=4096  #1600  2688  4096
@@ -26,5 +26,5 @@ MODEL_PATH='model/battery.ckpt'
 TEST_PATH='data/testSrc'
 TESTLABEL_PATH='data/testLabel'
 
-LEARNING_RATE=(1e-3)*0.4
+LEARNING_RATE=(1e-3)*0.1
 

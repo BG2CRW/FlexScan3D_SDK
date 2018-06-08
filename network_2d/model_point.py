@@ -128,7 +128,7 @@ class Rec_point(Network):
 				print("Epoch: [%2d] [%4d/%4d], loss: %.4f, time:%.2f" % (epoch, batch, len(label_path)//self.batch_size, err, time2))
 				avg_loss += err
 
-				self.saver.save(self.sess, save_path)
+			self.saver.save(self.sess, save_path)
 
 			avg_loss = avg_loss/len(label_path)
 			print("Avg_loss:",avg_loss)

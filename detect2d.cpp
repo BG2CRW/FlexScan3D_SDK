@@ -17,6 +17,7 @@ cv::Mat detect2d::drawResult(cv::Mat src, cv::Mat imgFCN)
 	vector<vector<Point>> contoursvalue;
 	vector<Vec4i> hierarchy;
 	Mat image1 = imgFCN.clone();
+	image1.convertTo(image1, CV_8U, 255.0);
 	Mat newsrc = src.clone();
 	findContours(image1, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
 	vector<double> length;
@@ -38,7 +39,7 @@ cv::Mat detect2d::drawResult(cv::Mat src, cv::Mat imgFCN)
 	}
 	for (int i = 0; i < contoursvalue.size(); i++)
 	{
-		drawContours(newsrc, contoursvalue, i, Scalar(0), 3, 8, hierarchy, 0, Point());
+		drawContours(newsrc, contoursvalue, i, Scalar(0), 1, 8, hierarchy, 0, Point());
 	}
 	//cv::imshow("result", newsrc);
 	return newsrc;

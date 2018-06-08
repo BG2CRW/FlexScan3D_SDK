@@ -43,21 +43,22 @@ with tf.Session() as sess:
 	while True:
 		img1 = np.zeros([1,cfg.INPUT_HEIGHT,cfg.INPUT_WIDTH,cfg.IMAGE_CHANNEL])
 		sockClient = server.accept(sock)
-		for cc in range(cfg.IMAGE_CHANNEL):
-			sockClient,receiveImage,open = server.socketReceive(sockClient)
-			#cv2.imshow("receiveImage",receiveImage);
-			#cv2.waitKey()
-			print(cc)
-			receiveImage = np.asarray(receiveImage)
-			receiveImage = receiveImage.astype('float32')
-			receiveImage = receiveImage.reshape(1,cfg.INPUT_HEIGHT,cfg.INPUT_WIDTH)
-			img1[0,:,:,cc] = receiveImage
+		sockClient,open = server.socketReceiveSignal(sockClient)
+		if open==0:
+			for cc in range(cfg.IMAGE_CHANNEL):		
+				print(cc)
+				receiveImage = cv2.imread("C:/cache/"+str(cc)+".jpg",0)
+				#cv2.imshow("bb",receiveImage)
+				#cv2.waitKey()
+				receiveImage = receiveImage.astype('float32')
+				receiveImage = receiveImage.reshape(1,cfg.INPUT_HEIGHT,cfg.INPUT_WIDTH)
+				img1[0,:,:,cc] = receiveImage
 
-
+		
 		img_part1 = img1[:,:,:cfg.TRAIN_WIDTH,:]
 		img_part2 = img1[:,:,cfg.INPUT_WIDTH-cfg.TRAIN_WIDTH:cfg.INPUT_WIDTH,:]
 		print(img_part2.shape)
-
+		
 		time1=time.clock()
 		img2_1 = sess.run(model_point.out, feed_dict={model_point.x:img_part1})
 		img2_2 = sess.run(model_point.out, feed_dict={model_point.x:img_part2})
@@ -76,8 +77,14 @@ with tf.Session() as sess:
 		img_dilation = cv2.dilate(img_erosion, kernel_point, iterations = 1)
 		ret, img_binary = cv2.threshold(img_dilation, 100, 255, cv2.THRESH_BINARY)
 		img_binary=img_binary.astype(np.uint8)
-		img3=img3.astype(np.uint8)
-		sockClient=server.socketSend(sockClient,img_binary)
+		#img3=img3.astype(np.uint8)
+		
+		#cv2.imshow("aa",img_binary)
+		#cv2.waitKey()
+		cv2.imwrite("C:/cache/result.jpg",img_binary)
+		#sockClient=server.socketSend(sockClient,img_binary)
+		sockClient=server.socketSendSignal(sockClient)
+		print("finish")
 
 		if open==1:
 			server.socketDisconnect(sockClient,sock)

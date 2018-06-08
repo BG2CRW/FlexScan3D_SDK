@@ -28,7 +28,8 @@ with tf.Session() as sess:
 	saver.restore(sess, save_path)
 	print('Finished reloading param.')
 
-	[test_image, test_label, dir_] = input_data(1)
+	[test_image, test_label, dir_] = input_data(1,cfg.TESTLABEL_PATH, cfg.TEST_PATH)
+	#[test_image, test_label, dir_] = input_data(1,cfg.LABEL_PATH,cfg.IMAGE_PATH)
 	data_num = len(test_label)
 	img1 = np.zeros([1,cfg.INPUT_HEIGHT,cfg.INPUT_WIDTH,cfg.IMAGE_CHANNEL])
 	for k in range(int(data_num)):
@@ -61,7 +62,7 @@ with tf.Session() as sess:
 		time2=time.clock()-time1
 		print(time2,".....time")
 
-		img3_1 = img2_1[0,	 	0:, 0:, 0]
+		img3_1 = img2_1[0, 0:, 0:, 0]
 		img3_2 = img2_2[0, 0:, 0:, 0]
 		print(img3_1.shape)
 		print(img3_2.shape)

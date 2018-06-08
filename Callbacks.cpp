@@ -16,7 +16,7 @@ void ScanProcessedCallback(void* userContext, FS3D_Handle handle)
 	int numValues;
 	double *vertices;
 	int errorReport=0;
-   
+	boost::timer constant;
 	if (FS3D_GetInt(handle, "nVertices", &nVertices) != FS3D_RESULT_OK)
 	{
 		printf("Could not retrieve the number of vertices.\n");
@@ -43,14 +43,15 @@ void ScanProcessedCallback(void* userContext, FS3D_Handle handle)
 		cloud.points[i].y = (float)vertices[i * 3 + 1];
 		cloud.points[i].z = -(float)vertices[i * 3 + 2];
 	}
-
+	cout << "Total time: " << constant.elapsed() << endl;
+	boost::timer t1;
 	cv::Mat depthSrc;
 	depthSrc = Shadow.showDepthImage(cloud, 2, 13);
 	if (depthSrc.rows == 3)
 	{
 		return;
 	}
-	boost::timer t1;
+	
 	/*errorReport = Flatulence.flatulenceCheck(depthSrc, 127, 2.3, 240, 35);*/
 	if (depthSrc.cols > depthSrc.rows)
 	{

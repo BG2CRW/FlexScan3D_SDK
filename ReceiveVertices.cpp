@@ -18,14 +18,21 @@
 #include "SocketMatTransmissionClient.h"
 #include "z_axis.h"
 #include <vector>
-
+#include <thread>
+#include <io.h>  
+#include <direct.h>  
+#include <atlconv.h>
+#include "OPTErrorCode.h"
+#include "OPTController.h"
 
 // Include files to use the PYLON API.
 #include "pylon\PylonIncludes.h"
 #include <pylon\PylonGUI.h>
 #include "config.hpp"
 
-int pic2Dnum = 5;
+#define level 5
+#define minnum 0
+
 static const uint32_t c_countOfImagesToGrab = 1;
 class detect2d Detect2d;
 class detect3d Detect3d;
@@ -39,57 +46,107 @@ char path2D_prefix[] = "D:/vs2015_ws/ScanInterface/examples/c++/ReceiveVertices/
 char path_suffix[] = ".jpg";
 char path_3DHor_suffix[] = "_Hor.jpg";
 char path_3DVert_suffix[] = "_Vert.jpg";
-int counter = 0;
+int counter = 637;
 int errorReport;
 
 using namespace std;
 using namespace Pylon;
 using namespace cv;
-cv::Mat socket2D(vector<cv::Mat> img)
+
+
+void call_from_thread(vector<cv::Mat> img, int tid) {
+	cout << "new thread!  " << tid << endl;
+	if (-1 == client.socketConnect("127.0.0.1", tid))
+	{
+		std::cout << "connect failed " << tid << endl;
+		if (-1 == client.socketConnect("127.0.0.1", tid))
+		{
+			std::cout << "connect failed " << tid << endl;
+		}
+	}
+	//std::cout << "connect sucess " << tid << endl;
+	int open = 0;//0:open,1:close
+	client.transmit(img[tid-31], open);
+	Sleep(1000);
+	//std::cout << "send sucess " << tid << endl;
+	cv::Mat imageReceive = client.get();
+	client.socketDisconnect();
+}
+
+
+cv::Mat socket2D(vector<cv::Mat> img, int num)
 {
+	cout<<img.size()<<endl;
+	for (int i = 0; i < img.size(); i++)
+	{
+		char str_prefix[] = "C:/cache/";
+		char str_suffix[] = ".jpg";
+		char str[200];
+		sprintf(str, "%s%d%s", str_prefix, i, str_suffix);
+		vector<int> compression_params;
+		compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);  //选择jpeg
+		compression_params.push_back(100); //在这个填入你要的图片质量
+		imwrite(str,img[i],compression_params);
+	}
 	if (-1 == client.socketConnect("127.0.0.1", 66))
 	{
 		std::cout << "connect failed" << endl;
 	}
-
 	int open = 0;//0:open,1:close
-	for (int i = 0; i < 5; i++)
+	int ack = client.sendSignal(open);
+	cv::Mat result;
+	if (ack == 1)
 	{
-		client.transmit(img[i], open);
-		Sleep(200);
+		result=imread("C:/cache/result.jpg",0);
 	}
-	cv::Mat imageReceive = client.get();
-	client.socketDisconnect();
-	//cv::imshow("clientReceive", imageReceive);
-	//cv::waitKey();
-	return imageReceive;
 
+	return result;
 }
 
 
-cv::Mat socket3D(cv::Mat img)
-{
-	if (-1 == client.socketConnect("127.0.0.1", 55))
-	{
-		std::cout << "connect failed" << endl;
-	}
-
-	int open = 0;//0:open,1:close
-	client.transmit(img, open);
-	cv::Mat imageReceive = client.get();
-	client.socketDisconnect();
-	return imageReceive;
-
-}
+//cv::Mat socket3D(cv::Mat img)
+//{
+//	if (-1 == client.socketConnect("127.0.0.1", 55))
+//	{
+//		std::cout << "connect failed" << endl;
+//	}
+//
+//	int open = 0;//0:open,1:close
+//	client.transmit(img, open);
+//	cv::Mat imageReceive = client.get();
+//	client.socketDisconnect();
+//	return imageReceive;
+//
+//}
 
 int main(int argc, char* argv[])
 {
+	if (access("C:/cache", 0) == -1)
+	{
+		mkdir("C:/cache");
+	}
 #ifdef GRAB
-	if (Motor.openCOM(TEXT("COM7")) == FALSE)
+/*	if (Motor.openCOM(TEXT("COM4")) == FALSE)
 	{
 		std::cout << "Failed to open serial port" << endl;
 		return 0;
 	}
+	OPTController_Handle m_OPTControllerHandle;
+	long lRet = -1;
+	lRet = OPTController_InitSerialPort("COM6", &m_OPTControllerHandle);
+	if (OPT_SUCCEED == lRet)
+	{
+		cout << "COM connect successfully!" << endl;
+	}
+	OPTController_SetIntensity(m_OPTControllerHandle, 1, 255);
+	OPTController_SetIntensity(m_OPTControllerHandle, 2, 255);
+	OPTController_SetIntensity(m_OPTControllerHandle, 3, 255);
+	OPTController_SetIntensity(m_OPTControllerHandle, 4, 255);
+	lRet = OPTController_TurnOffChannel(m_OPTControllerHandle, 1);
+	lRet = OPTController_TurnOffChannel(m_OPTControllerHandle, 2);
+	lRet = OPTController_TurnOffChannel(m_OPTControllerHandle, 3);
+	lRet = OPTController_TurnOffChannel(m_OPTControllerHandle, 4);
+	*/
 #endif
 	while (1)
 	{
@@ -105,6 +162,7 @@ int main(int argc, char* argv[])
 		swprintf(dir_name, L"%S", strPath2D);
 
 #ifdef GRAB
+	/*
 		// The exit code of the sample application.
 		int exitCode = 0;
 		if(Motor.reset_z_axis()==FALSE)
@@ -114,59 +172,72 @@ int main(int argc, char* argv[])
 		std::cout << "Please put a side of the next battery in basler!" << endl;
 		getchar();
 		bool flag = CreateDirectory(dir_name, NULL);
-		for (int i = 0; i < pic2Dnum; i++)
+		for (int i = 0; i < level; i++)
 		{
-			char strFileName[200];
-			sprintf(strFileName, "%s/%d%s", strPath2D, i, path_suffix);
-			// Before using any pylon methods, the pylon runtime must be initialized. 
-			PylonInitialize();
-			try
+			for (int j = 0;j < 4 ; j++)
 			{
-				CInstantCamera camera(CTlFactory::GetInstance().CreateFirstDevice());// Create an instant camera object with the camera device found first.
-				//cout << "Using device " << camera.GetDeviceInfo().GetModelName() << endl;// Print the model name of the camera.
-				camera.MaxNumBuffer = 5;
-				camera.StartGrabbing(c_countOfImagesToGrab);// Start the grabbing of c_countOfImagesToGrab images.
-				CGrabResultPtr ptrGrabResult;// This smart pointer will receive the grab result data.
-				camera.IsGrabbing();
-				camera.RetrieveResult(5000, ptrGrabResult, TimeoutHandling_ThrowException);// Wait for an image and then retrieve it. A timeout of 5000 ms is used.
-
-				if (ptrGrabResult->GrabSucceeded())// Image grabbed successfully?
+				
+				lRet = OPTController_TurnOffChannel(m_OPTControllerHandle, 1);
+				lRet = OPTController_TurnOffChannel(m_OPTControllerHandle, 2);
+				lRet = OPTController_TurnOffChannel(m_OPTControllerHandle, 3);
+				lRet = OPTController_TurnOffChannel(m_OPTControllerHandle, 4);
+				lRet = OPTController_TurnOnChannel(m_OPTControllerHandle, j+1);
+				char strFileName[200];
+				sprintf(strFileName, "%s%d%s", strPath2D, i*4+j, path_suffix);
+				// Before using any pylon methods, the pylon runtime must be initialized. 
+				PylonInitialize();
+				try
 				{
-					// Access the image data.
-					std::cout << "SizeX: " << ptrGrabResult->GetWidth() << "SizeY: " << ptrGrabResult->GetHeight() << endl;
-					const uint8_t *pImageBuffer = (uint8_t *)ptrGrabResult->GetBuffer();
-					//cout << "Gray value of first pixel: " << (uint32_t)pImageBuffer[0] << endl << endl;
+					CInstantCamera camera(CTlFactory::GetInstance().CreateFirstDevice());// Create an instant camera object with the camera device found first.
+					//cout << "Using device " << camera.GetDeviceInfo().GetModelName() << endl;// Print the model name of the camera.
+					camera.MaxNumBuffer = 5;
+					camera.StartGrabbing(c_countOfImagesToGrab);// Start the grabbing of c_countOfImagesToGrab images.
+					CGrabResultPtr ptrGrabResult;// This smart pointer will receive the grab result data.
+					camera.IsGrabbing();
+					camera.RetrieveResult(5000, ptrGrabResult, TimeoutHandling_ThrowException);// Wait for an image and then retrieve it. A timeout of 5000 ms is used.
 
-					imageBasler = cv::Mat(ptrGrabResult->GetHeight(), ptrGrabResult->GetWidth(), CV_8UC1, (uint8_t *)ptrGrabResult->GetBuffer());
-					cv::imwrite(strFileName, imageBasler);
+					if (ptrGrabResult->GrabSucceeded())// Image grabbed successfully?
+					{
+						// Access the image data.
+						std::cout << "SizeX: " << ptrGrabResult->GetWidth() << "SizeY: " << ptrGrabResult->GetHeight() << endl;
+						const uint8_t *pImageBuffer = (uint8_t *)ptrGrabResult->GetBuffer();
+						//cout << "Gray value of first pixel: " << (uint32_t)pImageBuffer[0] << endl << endl;
 
-					boost::timer t2;
-					std::cout << "Time of scratch check: " << t2.elapsed() << endl;
+						imageBasler = cv::Mat(ptrGrabResult->GetHeight(), ptrGrabResult->GetWidth(), CV_8UC1, (uint8_t *)ptrGrabResult->GetBuffer());
+						cv::imwrite(strFileName, imageBasler);
+
+						//boost::timer t2;
+						//std::cout << "Time of scratch check: " << t2.elapsed() << endl;
+					}
+					else
+					{
+						std::cout << "Error: " << ptrGrabResult->GetErrorCode() << " " << ptrGrabResult->GetErrorDescription() << endl;
+					}
+
+
 				}
-				else
+				catch (const GenericException &e)
 				{
-					std::cout << "Error: " << ptrGrabResult->GetErrorCode() << " " << ptrGrabResult->GetErrorDescription() << endl;
+					// Error handling.
+					cerr << "An exception occurred." << endl
+						<< e.GetDescription() << endl;
+					exitCode = 1;
 				}
-
-
+				// Releases all pylon resources. 
+				PylonTerminate();
+				std::cout << strFileName << endl;
+				
 			}
-			catch (const GenericException &e)
-			{
-				// Error handling.
-				cerr << "An exception occurred." << endl
-					<< e.GetDescription() << endl;
-				exitCode = 1;
-			}
-			// Releases all pylon resources. 
-			PylonTerminate();
-			std::cout << strFileName << endl;
 			Motor.move_distance(14);
 		}
-
+		//lRet = OPTController_ReleaseSerialPort(m_OPTControllerHandle);
+*/
 #endif
+		
 #ifdef READ
+/*
 	vector<cv::Mat> img;
-	for (int i = 0; i < pic2Dnum; i++)
+	for (int i = 0; i < level*4; i++)
 	{
 		char strFileName[200];
 		sprintf(strFileName, "%s/%d%s", strPath2D, i, path_suffix);
@@ -175,15 +246,14 @@ int main(int argc, char* argv[])
 		img.push_back(img1);
 	}
 	
-	cv::Mat output = socket2D(img);
+	cv::Mat output = socket2D(img, 1);
 	cv::Mat result = Detect2d.drawResult(img[1], output);
-	cv::namedWindow("2d result", CV_WINDOW_NORMAL);
-	cv::imshow("2d result",result);
-	cv::waitKey();
-	destroyWindow("2d result");
-
+	imwrite("D:/vs2015_ws/ScanInterface/examples/c++/ReceiveVertices/src/network_2d/data/newSrc/1.jpg", output);
+	imwrite("D:/vs2015_ws/ScanInterface/examples/c++/ReceiveVertices/src/network_2d/data/newSrc/2.jpg", result);
+*/
 #endif
-	
+
+
 #ifdef GRAB
 		
 		for (int i = 0; i < 2; i++)
@@ -208,12 +278,13 @@ int main(int argc, char* argv[])
 			if (FS3D_Attach() != FS3D_RESULT_OK)
 			{
 				printf("Could not start FlexScan3D.\n");
+				getchar();
 				return -1;
 			}
 
 			// Disable writing to disk
 			//printf("Disable disk writing...\n");
-			if (FS3D_Command("scriptline \"Set('Scanning_WriteToDisk', 'False')\"") != FS3D_RESULT_OK)
+			if (FS3D_Command("scriptline \"Set('Scanning_WriteToDisk', 'True')\"") != FS3D_RESULT_OK)
 			{
 				printf("An error occurred when modifying the Scanning_WriteToDisk setting.\n");
 				//FS3D_Exit();
@@ -241,16 +312,16 @@ int main(int argc, char* argv[])
 				return -1;
 			}
 
-			boost::timer constant;
+			//boost::timer constant;
 
 			//printf("Setting scanner exposure...\n");
-			if (FS3D_Command("scriptline \"SetScannerExposure(GetScannerNameFromIndex(0), 100)\"") != FS3D_RESULT_OK)
+			/*if (FS3D_Command("scriptline \"SetScannerExposure(GetScannerNameFromIndex(0), 100)\"") != FS3D_RESULT_OK)
 			{
 				printf("An error occurred when set scanner exposure.\n");
 				//FS3D_Exit();
 				FS3D_Detach();
 				return -1;
-			}
+			}*/
 
 			printf("Scanning...\n");
 			if (FS3D_Command("scriptline \"Scan()\"") != FS3D_RESULT_OK)
@@ -260,7 +331,7 @@ int main(int argc, char* argv[])
 				FS3D_Detach();
 				return -1;
 			}
-			cout << "Total time: " << constant.elapsed() << endl;
+			//cout << "Total time: " << constant.elapsed() << endl;
 
 
 			// Cancel the callback
