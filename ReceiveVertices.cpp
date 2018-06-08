@@ -53,27 +53,6 @@ using namespace std;
 using namespace Pylon;
 using namespace cv;
 
-
-void call_from_thread(vector<cv::Mat> img, int tid) {
-	cout << "new thread!  " << tid << endl;
-	if (-1 == client.socketConnect("127.0.0.1", tid))
-	{
-		std::cout << "connect failed " << tid << endl;
-		if (-1 == client.socketConnect("127.0.0.1", tid))
-		{
-			std::cout << "connect failed " << tid << endl;
-		}
-	}
-	//std::cout << "connect sucess " << tid << endl;
-	int open = 0;//0:open,1:close
-	client.transmit(img[tid-31], open);
-	Sleep(1000);
-	//std::cout << "send sucess " << tid << endl;
-	cv::Mat imageReceive = client.get();
-	client.socketDisconnect();
-}
-
-
 cv::Mat socket2D(vector<cv::Mat> img, int num)
 {
 	cout<<img.size()<<endl;
@@ -126,7 +105,8 @@ int main(int argc, char* argv[])
 		mkdir("C:/cache");
 	}
 #ifdef GRAB
-/*	if (Motor.openCOM(TEXT("COM4")) == FALSE)
+#ifdef CAM2D
+	if (Motor.openCOM(TEXT("COM4")) == FALSE)
 	{
 		std::cout << "Failed to open serial port" << endl;
 		return 0;
@@ -146,7 +126,7 @@ int main(int argc, char* argv[])
 	lRet = OPTController_TurnOffChannel(m_OPTControllerHandle, 2);
 	lRet = OPTController_TurnOffChannel(m_OPTControllerHandle, 3);
 	lRet = OPTController_TurnOffChannel(m_OPTControllerHandle, 4);
-	*/
+#endif
 #endif
 	while (1)
 	{
@@ -162,7 +142,7 @@ int main(int argc, char* argv[])
 		swprintf(dir_name, L"%S", strPath2D);
 
 #ifdef GRAB
-	/*
+#ifdef CAM2D
 		// The exit code of the sample application.
 		int exitCode = 0;
 		if(Motor.reset_z_axis()==FALSE)
@@ -231,11 +211,11 @@ int main(int argc, char* argv[])
 			Motor.move_distance(14);
 		}
 		//lRet = OPTController_ReleaseSerialPort(m_OPTControllerHandle);
-*/
+#endif
 #endif
 		
 #ifdef READ
-/*
+#ifdef CAM3D
 	vector<cv::Mat> img;
 	for (int i = 0; i < level*4; i++)
 	{
@@ -250,12 +230,12 @@ int main(int argc, char* argv[])
 	cv::Mat result = Detect2d.drawResult(img[1], output);
 	imwrite("D:/vs2015_ws/ScanInterface/examples/c++/ReceiveVertices/src/network_2d/data/newSrc/1.jpg", output);
 	imwrite("D:/vs2015_ws/ScanInterface/examples/c++/ReceiveVertices/src/network_2d/data/newSrc/2.jpg", result);
-*/
+#endif
 #endif
 
 
 #ifdef GRAB
-		
+#ifdef CAM3D		
 		for (int i = 0; i < 2; i++)
 		{
 			const char* pathToFlexScan3D = "C:\\Program Files\\LMI Technologies\\FlexScan3D 3.3\\App\\FlexScan3D.exe";
@@ -373,10 +353,11 @@ int main(int argc, char* argv[])
 		}
 		cv::imwrite(strPath3DVert, imgdepthVert);
 		cv::imwrite(strPath3DHor, imgdepthHor);
-		
+#endif		
 #endif
 #ifdef READ
-	/*	cout << strPath3DVert << endl;
+#ifdef CAM3D
+		cout << strPath3DVert << endl;
 		cv::Mat imgdepthVert = cv::imread(strPath3DVert, 0);
 		cv::Mat output_Vert = socket3D(imgdepthVert);
 		cv::Mat result_Vert = Detect3d.drawResult(imgdepthVert, output_Vert);
@@ -391,6 +372,7 @@ int main(int argc, char* argv[])
 		cv::waitKey();*/
 		
 		//int error3D = Detect3d.errorReport(imgdepthVert, imgdepthHor, silkModel2d);
+#endif
 #endif
 	}
 	
